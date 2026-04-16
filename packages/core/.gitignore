@@ -1,0 +1,6 @@
+# TypeScript build artifacts
+*.d.ts
+*.d.ts.map
+*.js
+*.js.map
+dist/

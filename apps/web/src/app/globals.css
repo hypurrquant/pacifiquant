@@ -1,0 +1,225 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 245, 254, 252;
+  --background-rgb: 11, 17, 20;
+  --primary: #5fd8ee;
+  --secondary: #3FBED6;
+  --accent: #5fd8ee;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+  background: #0b1114;
+}
+
+body {
+  background: linear-gradient(135deg, #0b1114 0%, #101a1f 50%, #0b1114 100%);
+  color: rgb(var(--foreground-rgb));
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* 모든 number input의 native spinner(증감 화살표) 제거 — 거래 UI는
+   직접 타이핑 또는 슬라이더/Mid 버튼으로 값을 조절하므로 화살표가
+   불필요한 시각 노이즈가 된다. */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* 커스텀 스크롤바 */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #101a1f;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #5fd8ee;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #93E3F3;
+}
+
+/* `.scrollbar-hide` utility — provided in spirit by the
+ * `tailwind-scrollbar-hide` plugin, but defined here as well so:
+ *  1. The class works on the element it's applied to AND on every
+ *     descendant (single class on a page root hides everything).
+ *  2. We don't depend on a dev-server restart after registering the
+ *     plugin in tailwind.config.js.
+ *  3. We beat the global `::-webkit-scrollbar { width: 8px }` rule above
+ *     via class specificity. */
+.scrollbar-hide,
+.scrollbar-hide * {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar,
+.scrollbar-hide *::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* 글로우 효과 */
+.glow-brand {
+  box-shadow: 0 0 20px rgba(95, 216, 238, 0.5);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 20px rgba(95, 216, 238, 0.5);
+}
+
+/* 그라데이션 텍스트 */
+.gradient-text {
+  background: linear-gradient(135deg, #5fd8ee 0%, #3FBED6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 그라데이션 보더 */
+.gradient-border {
+  position: relative;
+  background: #101a1f;
+  border-radius: 16px;
+}
+
+.gradient-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  padding: 1px;
+  background: linear-gradient(135deg, #5fd8ee 0%, #3FBED6 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* 배경 그리드 패턴 */
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(95, 216, 238, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(95, 216, 238, 0.07) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* 블러 효과 배경 */
+.blur-circle {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.3;
+}
+
+/* 버튼 호버 효과 */
+.btn-primary {
+  background: linear-gradient(135deg, #2F9FB4 0%, #5fd8ee 100%);
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 40px rgba(95, 216, 238, 0.3);
+}
+
+.btn-secondary {
+  background: transparent;
+  border: 1px solid rgba(95, 216, 238, 0.5);
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background: rgba(95, 216, 238, 0.1);
+  border-color: #5fd8ee;
+}
+
+/* 카드 호버 효과 */
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* 레이어 애니메이션 */
+@keyframes layer-pulse {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.layer-animate {
+  animation: layer-pulse 2s ease-in-out infinite;
+}
+
+/* Perp OrderForm size slider — thin track, teal thumb that sits flush on it. */
+.perp-size-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 9999px;
+  outline: none;
+  cursor: pointer;
+}
+.perp-size-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: #5fd8ee;
+  border: 2px solid #0F1A1F;
+  box-shadow: 0 0 0 1px #5fd8ee;
+  cursor: pointer;
+  transition: transform 0.1s ease-out;
+}
+.perp-size-slider::-webkit-slider-thumb:hover,
+.perp-size-slider:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+.perp-size-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: #5fd8ee;
+  border: 2px solid #0F1A1F;
+  box-shadow: 0 0 0 1px #5fd8ee;
+  cursor: pointer;
+  transition: transform 0.1s ease-out;
+}
+.perp-size-slider::-moz-range-thumb:hover,
+.perp-size-slider:active::-moz-range-thumb {
+  transform: scale(1.15);
+}
+.perp-size-slider::-moz-range-track {
+  height: 4px;
+  border-radius: 9999px;
+  background: transparent;
+}

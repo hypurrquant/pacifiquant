@@ -1,0 +1,25 @@
+{
+  "name": "pacifiquant",
+  "private": true,
+  "workspaces": [
+    "packages/core",
+    "packages/react",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "pnpm --dir apps/web dev",
+    "build": "pnpm --dir apps/web build",
+    "start": "pnpm --dir apps/web start",
+    "typecheck": "npx tsc -p apps/web/tsconfig.json --noEmit"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/react": "^18.3.0"
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.0.0"
+  }
+}

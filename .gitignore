@@ -1,0 +1,62 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+.next/
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# TypeScript artifacts (must use `tsc --noEmit`)
+*.js.map
+*.d.ts.map
+
+# Env
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Testing
+coverage/
+playwright-report/
+test-results/
+.nyc_output/
+.playwright-mcp/
+
+# Cache
+.cache/
+.turbo/
+.eslintcache
+.vercel
+.netlify
+
+# OMC / Claude
+.omc/
+.claude/
+.serena/
+
+# Mobile (React Native)
+apps/mobile/android/build/
+apps/mobile/android/app/build/
+apps/mobile/ios/build/
+apps/mobile/ios/Pods/
+apps/mobile/rust/wallet-engine/target/

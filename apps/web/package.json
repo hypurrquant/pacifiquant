@@ -1,0 +1,49 @@
+{
+  "name": "pacifiquant-fe",
+  "version": "1.18.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3002",
+    "build": "next build",
+    "start": "next start -p 3002",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@hq/react": "workspace:*",
+    "@privy-io/react-auth": "^3.1.0",
+    "@tanstack/query-sync-storage-persister": "^5.90.22",
+    "@tanstack/react-query": "^5.90.5",
+    "@tanstack/react-query-persist-client": "^5.90.22",
+    "@rainbow-me/rainbowkit": "^2.2.10",
+    "@wagmi/connectors": "^5.11.2",
+    "@wagmi/core": "^2.22.1",
+    "@zerodev/ecdsa-validator": "^5.4.9",
+    "@zerodev/sdk": "^5.5.3",
+    "clsx": "^2.1.1",
+    "focus-trap-react": "^11.0.4",
+    "framer-motion": "^12.23.26",
+    "lightweight-charts": "^5.0.9",
+    "next": "13.5.8",
+    "react": "^18",
+    "react-dom": "^18",
+    "tailwind-merge": "^3.4.0",
+    "viem": "^2.38.1",
+    "wagmi": "^2.19.5",
+    "zod": "^3.25.76",
+    "zustand": "^4.5.7"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.3",
+    "@next/bundle-analyzer": "^16.2.2",
+    "@types/node": "^24.7.2",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^19.2.1",
+    "autoprefixer": "^10",
+    "eslint": "^9.39.2",
+    "eslint-config-next": "^16.1.1",
+    "postcss": "^8",
+    "tailwind-scrollbar-hide": "^4.0.0",
+    "tailwindcss": "^3",
+    "typescript": "^5.9.3"
+  }
+}

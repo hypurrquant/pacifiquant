@@ -1,0 +1,333 @@
+- generic [ref=e1]:
+  - banner [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link "HypurrQuant HypurrQuantbeta" [ref=e6] [cursor=pointer]:
+            - /url: /
+            - img "HypurrQuant" [ref=e7]
+            - generic [ref=e8]:
+              - text: HypurrQuant
+              - superscript [ref=e9]: beta
+          - navigation [ref=e10]:
+            - link "LP" [ref=e11] [cursor=pointer]:
+              - /url: /lp
+            - link "Swap" [ref=e12] [cursor=pointer]:
+              - /url: /swap
+            - link "Perp" [ref=e13] [cursor=pointer]:
+              - /url: /perp
+            - link "Strategies" [ref=e14] [cursor=pointer]:
+              - /url: /strategies
+        - button "Connect Wallet" [ref=e202] [cursor=pointer]:
+          - img [ref=e203]
+          - generic [ref=e205]: Connect Wallet
+  - main [ref=e18]:
+    - generic [ref=e20]:
+      - generic [ref=e21]:
+        - generic [ref=e23]:
+          - generic [ref=e24]:
+            - generic [ref=e25]: ★
+            - button "BTC-USDC 70,941.50 -0.75%" [ref=e546] [cursor=pointer]:
+              - generic [ref=e207]: BTC-USDC
+              - generic [ref=e208]: 70,941.50
+              - generic [ref=e209]: "-0.75%"
+            - button "ETH-USDC 2,192.85 -0.84%" [ref=e506] [cursor=pointer]:
+              - generic [ref=e211]: ETH-USDC
+              - generic [ref=e212]: 2,192.85
+              - generic [ref=e213]: "-0.84%"
+            - button "SOL-USDC 81.923 -0.30%" [ref=e507] [cursor=pointer]:
+              - generic [ref=e215]: SOL-USDC
+              - generic [ref=e216]: "81.923"
+              - generic [ref=e217]: "-0.30%"
+            - button "HYPE-USDC 41.543 +1.90%" [ref=e547] [cursor=pointer]:
+              - generic [ref=e219]: HYPE-USDC
+              - generic [ref=e220]: "41.543"
+              - generic [ref=e221]: +1.90%
+          - generic [ref=e27]:
+            - button "BTC/USDC" [ref=e222] [cursor=pointer]:
+              - generic [ref=e29]: BTC/USDC
+              - img [ref=e30]
+            - generic [ref=e223]:
+              - generic [ref=e224]:
+                - generic [ref=e225]: Mark
+                - generic [ref=e226]: 70,941.50
+              - generic [ref=e227]:
+                - generic [ref=e228]: Oracle
+                - generic [ref=e229]: 70,985.00
+            - generic [ref=e230]:
+              - generic [ref=e231]: 24h Change
+              - generic [ref=e232]: "-536.50 / -0.75%"
+            - generic [ref=e233]:
+              - generic [ref=e234]: 24h Volume
+              - generic [ref=e235]: $1,586,527,884.19
+            - generic [ref=e236]:
+              - generic [ref=e237]: Open Interest
+              - generic [ref=e238]: $1,904,359,358.07
+            - generic [ref=e239]:
+              - generic [ref=e240]:
+                - generic [ref=e241]: Funding
+                - generic [ref=e242]: 0.0001%
+              - generic [ref=e243]:
+                - generic [ref=e244]: Countdown
+                - generic [ref=e245]: 00:38:16
+        - generic [ref=e33]:
+          - button "Hyperliquid" [active] [ref=e34] [cursor=pointer]:
+            - text: Hyperliquid
+            - img [ref=e36]
+          - generic [ref=e432]:
+            - button "Hyperliquid" [ref=e433] [cursor=pointer]:
+              - generic [ref=e434]: Hyperliquid
+            - button "Pacifica" [ref=e436] [cursor=pointer]:
+              - generic [ref=e437]: Pacifica
+            - button "Lighter" [ref=e439] [cursor=pointer]:
+              - generic [ref=e440]: Lighter
+      - generic [ref=e39]:
+        - generic [ref=e41]:
+          - button "1m" [ref=e42] [cursor=pointer]
+          - button "5m" [ref=e43] [cursor=pointer]
+          - button "15m" [ref=e44] [cursor=pointer]
+          - button "1H" [ref=e45] [cursor=pointer]
+          - button "4H" [ref=e46] [cursor=pointer]
+          - button "1D" [ref=e47] [cursor=pointer]
+          - button "1W" [ref=e48] [cursor=pointer]
+        - generic [ref=e246]:
+          - generic [ref=e247]: BTC/USD · 15m
+          - generic [ref=e248]: O 70,924
+          - generic [ref=e249]: H 70,942
+          - generic [ref=e250]: L 70,883
+          - generic [ref=e251]: C 70,942
+          - generic [ref=e252]: +18.00 / +0.03%
+          - generic [ref=e253]: "Volume SMA 5: 246"
+        - table [ref=e53]:
+          - row [ref=e54]:
+            - cell
+            - cell [ref=e55]:
+              - link "Charting by TradingView" [ref=e59] [cursor=pointer]:
+                - /url: https://www.tradingview.com/?utm_medium=lwc-link&utm_campaign=lwc-chart&utm_source=localhost/perp
+                - img [ref=e60]
+            - cell [ref=e64]
+          - row [ref=e68]:
+            - cell
+            - cell [ref=e69]
+            - cell [ref=e73]
+      - generic [ref=e77]:
+        - generic [ref=e78]:
+          - button "Order Book" [ref=e79] [cursor=pointer]
+          - button "Trades" [ref=e80] [cursor=pointer]
+        - generic [ref=e82]:
+          - generic [ref=e254]:
+            - generic [ref=e255]:
+              - button "1" [ref=e256] [cursor=pointer]
+              - button "10" [ref=e257] [cursor=pointer]
+              - button "100" [ref=e258] [cursor=pointer]
+              - button "1000" [ref=e259] [cursor=pointer]
+            - generic [ref=e260]: USDC
+          - generic [ref=e261]:
+            - generic [ref=e262]: Price
+            - generic [ref=e263]: Size (BTC)
+            - generic [ref=e264]: Total (USDC)
+          - generic [ref=e265]:
+            - button "70,952 0.0119 19.77K" [ref=e548] [cursor=pointer]:
+              - generic [ref=e510]: 70,952
+              - generic [ref=e511]: "0.0119"
+              - generic [ref=e512]: 19.77K
+            - button "70,951 0.0685 18.92K" [ref=e549] [cursor=pointer]:
+              - generic [ref=e515]: 70,951
+              - generic [ref=e516]: "0.0685"
+              - generic [ref=e517]: 18.92K
+            - button "70,950 0.0009 14.06K" [ref=e550] [cursor=pointer]:
+              - generic [ref=e268]: 70,950
+              - generic [ref=e269]: "0.0009"
+              - generic [ref=e270]: 14.06K
+            - button "70,949 0.0002 14.00K" [ref=e551] [cursor=pointer]:
+              - generic [ref=e273]: 70,949
+              - generic [ref=e274]: "0.0002"
+              - generic [ref=e275]: 14.00K
+            - button "70,948 0.0038 13.99K" [ref=e552] [cursor=pointer]:
+              - generic [ref=e278]: 70,948
+              - generic [ref=e279]: "0.0038"
+              - generic [ref=e280]: 13.99K
+            - button "70,947 0.0065 13.72K" [ref=e553] [cursor=pointer]:
+              - generic [ref=e283]: 70,947
+              - generic [ref=e284]: "0.0065"
+              - generic [ref=e285]: 13.72K
+            - button "70,946 0.0009 13.26K" [ref=e554] [cursor=pointer]:
+              - generic [ref=e288]: 70,946
+              - generic [ref=e289]: "0.0009"
+              - generic [ref=e290]: 13.26K
+            - button "70,945 0.0016 13.19K" [ref=e555] [cursor=pointer]:
+              - generic [ref=e293]: 70,945
+              - generic [ref=e294]: "0.0016"
+              - generic [ref=e295]: 13.19K
+            - button "70,944 0.0010 13.08K" [ref=e556] [cursor=pointer]:
+              - generic [ref=e298]: 70,944
+              - generic [ref=e299]: "0.0010"
+              - generic [ref=e300]: 13.08K
+            - button "70,943 0.0216 13.01K" [ref=e557] [cursor=pointer]:
+              - generic [ref=e303]: 70,943
+              - generic [ref=e304]: "0.0216"
+              - generic [ref=e305]: 13.01K
+            - button "70,942 0.1617 11.47K" [ref=e558] [cursor=pointer]:
+              - generic [ref=e308]: 70,942
+              - generic [ref=e309]: "0.1617"
+              - generic [ref=e310]: 11.47K
+          - generic [ref=e319]:
+            - generic [ref=e320]: Spread
+            - generic [ref=e321]: "1.00"
+            - generic [ref=e322]: 0.001%
+          - generic [ref=e323]:
+            - button "70,941 39.2505 2.78M" [ref=e559] [cursor=pointer]:
+              - generic [ref=e529]: 70,941
+              - generic [ref=e530]: "39.2505"
+              - generic [ref=e531]: 2.78M
+            - button "70,940 0.4937 2.82M" [ref=e560] [cursor=pointer]:
+              - generic [ref=e534]: 70,940
+              - generic [ref=e535]: "0.4937"
+              - generic [ref=e536]: 2.82M
+            - button "70,939 6.8375 3.30M" [ref=e561] [cursor=pointer]:
+              - generic [ref=e326]: 70,939
+              - generic [ref=e327]: "6.8375"
+              - generic [ref=e328]: 3.30M
+            - button "70,938 1.8067 3.43M" [ref=e562] [cursor=pointer]:
+              - generic [ref=e331]: 70,938
+              - generic [ref=e332]: "1.8067"
+              - generic [ref=e333]: 3.43M
+            - button "70,937 8.4803 4.03M" [ref=e563] [cursor=pointer]:
+              - generic [ref=e336]: 70,937
+              - generic [ref=e337]: "8.4803"
+              - generic [ref=e338]: 4.03M
+            - button "70,936 9.8686 4.73M" [ref=e564] [cursor=pointer]:
+              - generic [ref=e341]: 70,936
+              - generic [ref=e342]: "9.8686"
+              - generic [ref=e343]: 4.73M
+            - button "70,935 2.0764 4.88M" [ref=e565] [cursor=pointer]:
+              - generic [ref=e346]: 70,935
+              - generic [ref=e347]: "2.0764"
+              - generic [ref=e348]: 4.88M
+            - button "70,934 18.5086 6.19M" [ref=e566] [cursor=pointer]:
+              - generic [ref=e351]: 70,934
+              - generic [ref=e352]: "18.5086"
+              - generic [ref=e353]: 6.19M
+            - button "70,933 5.2564 6.57M" [ref=e567] [cursor=pointer]:
+              - generic [ref=e356]: 70,933
+              - generic [ref=e357]: "5.2564"
+              - generic [ref=e358]: 6.57M
+            - button "70,932 1.9094 6.70M" [ref=e568] [cursor=pointer]:
+              - generic [ref=e361]: 70,932
+              - generic [ref=e362]: "1.9094"
+              - generic [ref=e363]: 6.70M
+            - button "70,931 1.8570 6.83M" [ref=e569] [cursor=pointer]:
+              - generic [ref=e366]: 70,931
+              - generic [ref=e367]: "1.8570"
+              - generic [ref=e368]: 6.83M
+      - generic [ref=e84]:
+        - generic [ref=e85]:
+          - generic [ref=e86]:
+            - button "Cross" [disabled] [ref=e87]
+            - button "Isolated" [ref=e88] [cursor=pointer]
+            - button "10x" [ref=e89] [cursor=pointer]
+          - generic [ref=e90]:
+            - button "Market" [ref=e91] [cursor=pointer]
+            - button "Limit" [ref=e92] [cursor=pointer]
+            - button "Pro" [ref=e94] [cursor=pointer]:
+              - text: Pro
+              - img [ref=e95]
+          - generic [ref=e97]:
+            - button "Buy / Long" [ref=e98] [cursor=pointer]
+            - button "Sell / Short" [ref=e99] [cursor=pointer]
+          - generic [ref=e100]:
+            - generic [ref=e101]:
+              - generic [ref=e102]: Available to Trade
+              - generic [ref=e103]: 0.00USDC
+            - generic [ref=e104]:
+              - generic [ref=e105]: Current Position
+              - generic [ref=e106]: 0.00BTC
+          - generic [ref=e108]:
+            - generic [ref=e109]: Price (USDC)
+            - spinbutton [ref=e110]
+            - button "Mid" [ref=e111] [cursor=pointer]
+          - generic [ref=e113]:
+            - generic [ref=e114]: Size
+            - spinbutton [ref=e115]
+            - button "BTC" [ref=e379] [cursor=pointer]:
+              - generic [ref=e117]: BTC
+              - img [ref=e118]
+          - generic [ref=e120]:
+            - slider [ref=e122]: "0"
+            - generic [ref=e123]:
+              - generic [ref=e124]: "0"
+              - generic [ref=e125]: "%"
+          - generic [ref=e126]:
+            - generic [ref=e127] [cursor=pointer]:
+              - checkbox "Reduce Only" [ref=e128]
+              - text: Reduce Only
+            - generic [ref=e129]:
+              - generic [ref=e130]: TIF
+              - button "GTC" [ref=e131] [cursor=pointer]:
+                - text: GTC
+                - img [ref=e132]
+          - generic [ref=e135] [cursor=pointer]:
+            - checkbox "Take Profit / Stop Loss" [ref=e136]
+            - text: Take Profit / Stop Loss
+          - button "Enable Trading" [ref=e138] [cursor=pointer]
+          - generic [ref=e139]:
+            - generic [ref=e140]:
+              - generic [ref=e141]: Liquidation Price
+              - generic [ref=e142]: N/A
+            - generic [ref=e143]:
+              - generic [ref=e144]: Order Value
+              - generic [ref=e145]: N/A
+            - generic [ref=e146]:
+              - generic [ref=e147]: Margin Required
+              - generic [ref=e148]: N/A
+            - generic [ref=e149]:
+              - generic [ref=e150]: Fees
+              - generic [ref=e153]: 0.0450% / 0.0150%
+        - generic [ref=e154]:
+          - button "Deposit" [ref=e155] [cursor=pointer]
+          - generic [ref=e156]:
+            - button "Perps ⇄ Spot" [disabled] [ref=e157]
+            - button "Withdraw" [disabled] [ref=e158]
+          - heading "Unified Account Summary" [level=3] [ref=e159]
+          - generic [ref=e160]: Connect wallet to view account
+          - generic [ref=e161]:
+            - generic [ref=e162]:
+              - generic [ref=e163]: Agent Wallet
+              - generic [ref=e164]: Not Set
+            - button "Setup Agent Wallet" [ref=e165] [cursor=pointer]
+      - generic [ref=e167]:
+        - generic [ref=e168]:
+          - button "Balances" [ref=e169] [cursor=pointer]
+          - button "Positions" [ref=e170] [cursor=pointer]
+          - button "Open Orders" [ref=e171] [cursor=pointer]
+          - button "Trade History" [ref=e172] [cursor=pointer]
+          - button "Funding History" [ref=e173] [cursor=pointer]
+          - button "Order History" [ref=e174] [cursor=pointer]
+        - generic [ref=e176]: Connect wallet to view balances
+  - contentinfo [ref=e177]:
+    - generic [ref=e179]:
+      - generic [ref=e180]:
+        - img "HypurrQuant" [ref=e181]
+        - generic [ref=e182]: "|"
+        - generic [ref=e183]: Multi-Chain DeFi Platform
+      - generic [ref=e184]:
+        - link "Docs" [ref=e185] [cursor=pointer]:
+          - /url: https://docs.hypurrquant.com/
+          - img [ref=e186]
+        - link "Twitter" [ref=e188] [cursor=pointer]:
+          - /url: https://x.com/hypurrquant
+          - img [ref=e189]
+        - link "Telegram" [ref=e191] [cursor=pointer]:
+          - /url: https://t.me/hypurrquant_official
+          - img [ref=e192]
+        - link "Bot" [ref=e194] [cursor=pointer]:
+          - /url: https://t.me/hypurrQuant_bot
+          - img [ref=e195]
+      - generic [ref=e197]:
+        - generic [ref=e198]: © 2026 HypurrQuant
+        - link "Privacy" [ref=e199] [cursor=pointer]:
+          - /url: https://docs.hypurrquant.com/privacy/privacy_policy
+        - link "Terms" [ref=e200] [cursor=pointer]:
+          - /url: https://docs.hypurrquant.com/privacy/terms_of_service
+  - generic "Notifications"
+  - alert [ref=e201]

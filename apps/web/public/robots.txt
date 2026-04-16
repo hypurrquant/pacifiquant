@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /privy/
+Disallow: /deeplink/
+Disallow: /approve/
+Disallow: /deposit/
+Disallow: /api-viewer/
+Disallow: /_mint_disabled/
+
+Sitemap: https://app.pacifiquant.com/sitemap.xml

@@ -1,0 +1,20 @@
+{
+  "name": "@hq/react",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.ts",
+  "types": "index.ts",
+  "peerDependencies": {
+    "react": "^18",
+    "viem": "^2",
+    "zustand": "^4.5.7"
+  },
+  "dependencies": {
+    "@hq/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/react": "^18.3.0",
+    "typescript": "^5.9.3"
+  }
+}

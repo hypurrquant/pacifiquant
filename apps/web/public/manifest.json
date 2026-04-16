@@ -1,0 +1,21 @@
+{
+  "name": "PacifiQuant",
+  "short_name": "PacifiQuant",
+  "description": "Pacifica-first perpetual trading with cross-DEX strategies.",
+  "start_url": "/strategies",
+  "display": "standalone",
+  "background_color": "#070c0f",
+  "theme_color": "#070c0f",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
