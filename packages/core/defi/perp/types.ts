@@ -218,6 +218,16 @@ export interface FundingHistoryEntry {
   readonly rate: number;   // funding rate at that time
 }
 
+/**
+ * One point in a market-wide funding-rate time series. The rate is returned
+ * in the venue's native cadence (HL/Pacifica = 1h, Aster = 8h) — normalize
+ * through `toHourlyRate` before comparing across exchanges.
+ */
+export interface MarketFundingPoint {
+  readonly ts: number;
+  readonly fundingRate: number;
+}
+
 // ============================================================
 // Order Params
 // ============================================================
@@ -238,6 +248,24 @@ export interface PlaceOrderParams {
     readonly sl?: { price: number; trigger: TpSlTrigger };
   };
   /** Agent wallet의 master address — agent key로 서명 시 필수 */
+  readonly vaultAddress?: `0x${string}`;
+}
+
+/**
+ * TWAP (Time-Weighted Average Price) order — splits a large order into
+ * smaller slices executed over `durationMinutes`. Native on HL / Lighter /
+ * Aster; Pacifica has no native TWAP endpoint and returns
+ * success:false from the adapter.
+ */
+export interface PlaceTwapOrderParams {
+  readonly symbol: string;
+  readonly side: OrderSide;
+  readonly totalSize: number;
+  /** Total duration of the TWAP window, in minutes. */
+  readonly durationMinutes: number;
+  readonly reduceOnly?: boolean;
+  /** HL-specific: randomize slice timing. Default false. */
+  readonly randomize?: boolean;
   readonly vaultAddress?: `0x${string}`;
 }
 
@@ -584,10 +612,14 @@ export interface IPerpAdapter {
   getOrderHistory(address: string, limit?: number): Promise<PerpOrder[]>;
   getFills(address: string, limit?: number): Promise<Fill[]>;
   getFundingHistory(address: string, startTime?: number): Promise<FundingHistoryEntry[]>;
+  /** Market-wide historical funding rate time series for `symbol`, in the
+   *  venue's native cadence. `startTime` is a ms epoch lower bound. */
+  getMarketFundingHistory(symbol: string, startTime?: number): Promise<MarketFundingPoint[]>;
 
   // Trading (REST — requires signing)
   placeOrder(params: PlaceOrderParams, signFn: EIP712SignFn): Promise<OrderResult>;
   placeScaleOrder(params: PlaceScaleOrderParams, signFn: EIP712SignFn): Promise<OrderResult>;
+  placeTwapOrder(params: PlaceTwapOrderParams, signFn: EIP712SignFn): Promise<OrderResult>;
   cancelOrder(params: CancelOrderParams, signFn: EIP712SignFn): Promise<OrderResult>;
   modifyOrder(params: ModifyOrderParams, signFn: EIP712SignFn): Promise<OrderResult>;
   updateLeverage(params: UpdateLeverageParams, signFn: EIP712SignFn): Promise<void>;

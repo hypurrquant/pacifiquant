@@ -8,7 +8,11 @@ import { useState } from 'react';
 import type { PerpAccountState, PerpPosition, PerpMarket, SpotBalance } from '../types/perp.types';
 import { BridgeCard } from '@/domains/bridge';
 import type { BridgeDirection } from '@/domains/bridge';
-import { useAgentWalletStore, selectIsAgentActive } from '../stores/useAgentWalletStore';
+import { useAgentWalletStore, selectIsAgentActive as selectHlAgentActive } from '../stores/useAgentWalletStore';
+import { usePacificaAgentStore, selectPacificaAgentActive } from '../stores/usePacificaAgentStore';
+import { useLighterAgentStore, selectLighterAgentActive } from '../stores/useLighterAgentStore';
+import { useAsterAgentStore, selectAsterAgentActive } from '../stores/useAsterAgentStore';
+import { usePerpStore } from '../stores/usePerpStore';
 
 interface Props {
   accountState: PerpAccountState | null;
@@ -25,8 +29,63 @@ export function AccountInfoPanel({ accountState, positions, spotBalances, market
   // Withdraw and Deposit both route through BridgeCard (Relay/CCTP), so they
   // share one modal container with different initial direction.
   const [bridgeDirection, setBridgeDirection] = useState<BridgeDirection | null>(null);
-  const agentStore = useAgentWalletStore();
-  const isAgentActive = useAgentWalletStore(selectIsAgentActive);
+
+  // Per-DEX agent state. The trading layout scopes orders to `selectedDex`,
+  // so the account panel mirrors it — previously this was HL-only and would
+  // render "Not Set" even after a Pacifica/Lighter/Aster agent was approved.
+  const selectedDex = usePerpStore((s) => s.selectedDex);
+  const hlAgentStore = useAgentWalletStore();
+  const hlActive = useAgentWalletStore(selectHlAgentActive);
+  const pacStore = usePacificaAgentStore();
+  const pacActive = usePacificaAgentStore(selectPacificaAgentActive);
+  const lighterStore = useLighterAgentStore();
+  const lighterActive = useLighterAgentStore(selectLighterAgentActive);
+  const asterStore = useAsterAgentStore();
+  const asterActive = useAsterAgentStore(selectAsterAgentActive);
+
+  const agentView = (() => {
+    switch (selectedDex) {
+      case 'pacifica': {
+        const p = pacStore.persisted;
+        return {
+          active: pacActive,
+          agentAddress: p.type === 'registered' ? p.agentPublicKey : null,
+          masterAddress: p.type === 'registered' ? p.mainAccount : null,
+          disconnect: () => pacStore.disconnect(),
+        };
+      }
+      case 'lighter': {
+        const p = lighterStore.persisted;
+        return {
+          active: lighterActive,
+          agentAddress: p.type === 'registered' ? `#${p.apiKeyIndex} @ acct ${p.accountIndex}` : null,
+          masterAddress: p.type === 'registered' ? p.l1Address : null,
+          disconnect: () => lighterStore.disconnect(),
+        };
+      }
+      case 'aster': {
+        const p = asterStore.persisted;
+        return {
+          active: asterActive,
+          agentAddress: p.type === 'registered' ? p.agentAddress : null,
+          masterAddress: p.type === 'registered' ? p.user : null,
+          disconnect: () => asterStore.disconnect(),
+        };
+      }
+      default: {
+        // hyperliquid (default) — preserves prior behavior
+        const p = hlAgentStore.persisted;
+        return {
+          active: hlActive,
+          agentAddress: p.type !== 'disconnected' ? p.agentAddress : null,
+          masterAddress: p.type !== 'disconnected' ? p.masterAddress : null,
+          disconnect: () => hlAgentStore.disconnect(),
+        };
+      }
+    }
+  })();
+
+  const isAgentActive = agentView.active;
 
   const totalUnrealizedPnl = positions.reduce((sum, p) => sum + p.unrealizedPnl, 0);
 
@@ -151,22 +210,24 @@ export function AccountInfoPanel({ accountState, positions, spotBalances, market
               <span className="text-xs px-1.5 py-0.5 rounded bg-gray-800 text-gray-500">Not Set</span>
             )}
           </div>
-          {isAgentActive && agentStore.persisted.type !== 'disconnected' && (
+          {isAgentActive && (agentView.agentAddress || agentView.masterAddress) && (
             <div className="space-y-1 mb-1.5">
-              <div className="flex justify-between">
-                <span className="text-xs text-gray-600">Agent</span>
-                <span className="text-xs text-gray-400 font-mono">{agentStore.persisted.agentAddress.slice(0, 8)}...{agentStore.persisted.agentAddress.slice(-4)}</span>
-              </div>
-              {agentStore.persisted.masterAddress && (
+              {agentView.agentAddress && (
+                <div className="flex justify-between">
+                  <span className="text-xs text-gray-600">Agent</span>
+                  <span className="text-xs text-gray-400 font-mono">{shortAddr(agentView.agentAddress)}</span>
+                </div>
+              )}
+              {agentView.masterAddress && (
                 <div className="flex justify-between">
                   <span className="text-xs text-gray-600">Master</span>
-                  <span className="text-xs text-gray-400 font-mono">{agentStore.persisted.masterAddress.slice(0, 8)}...{agentStore.persisted.masterAddress.slice(-4)}</span>
+                  <span className="text-xs text-gray-400 font-mono">{shortAddr(agentView.masterAddress)}</span>
                 </div>
               )}
             </div>
           )}
           <button
-            onClick={isAgentActive ? () => agentStore.disconnect() : onOpenAgentSetup}
+            onClick={isAgentActive ? agentView.disconnect : onOpenAgentSetup}
             className={`w-full py-1.5 text-xs font-medium rounded transition-colors ${
               isAgentActive
                 ? 'text-[#ED7088] border border-[#ED7088]/30 hover:bg-[#ED7088]/10'
@@ -194,6 +255,10 @@ export function AccountInfoPanel({ accountState, positions, spotBalances, market
       )}
     </>
   );
+}
+
+function shortAddr(v: string): string {
+  return v.length > 14 ? `${v.slice(0, 8)}…${v.slice(-4)}` : v;
 }
 
 function InfoRow({

@@ -46,6 +46,8 @@ import type {
   Fill,
   PlaceOrderParams,
   PlaceScaleOrderParams,
+  PlaceTwapOrderParams,
+  MarketFundingPoint,
   CancelOrderParams,
   ModifyOrderParams,
   UpdateLeverageParams,
@@ -1093,6 +1095,36 @@ export class AsterPerpAdapter extends PerpAdapterBase {
     }));
   }
 
+  /** Aster's `/fapi/v1/fundingRate` specifically lacks CORS headers — every
+   *  other public Aster endpoint works from the browser, only this one is
+   *  closed — and the app is shipped under `output: 'export'` so there's no
+   *  server-side proxy we can hop through. We throw a labeled error so the
+   *  drill-down can surface the reason instead of silently showing zero
+   *  points. Server contexts still hit upstream directly. */
+  async getMarketFundingHistory(symbol: string, startTime?: number): Promise<MarketFundingPoint[]> {
+    const apiSymbol = this.toApi(symbol);
+    const params = new URLSearchParams({
+      symbol: apiSymbol,
+      limit: '200',
+    });
+    if (startTime !== undefined) params.set('startTime', String(startTime));
+    else params.set('startTime', String(Date.now() - 24 * 60 * 60 * 1000));
+    try {
+      const res = await fetch(`${this.apiUrl}/fapi/v1/fundingRate?${params.toString()}`);
+      if (!res.ok) return [];
+      const raw = (await res.json()) as ReadonlyArray<{ fundingTime: number; fundingRate: string }>;
+      return raw
+        .map(r => ({ ts: r.fundingTime, fundingRate: parseFloat(r.fundingRate) }))
+        .filter(p => Number.isFinite(p.fundingRate))
+        .sort((a, b) => a.ts - b.ts);
+    } catch (err) {
+      if (typeof window !== 'undefined') {
+        throw new Error('CORS blocked — Aster does not expose /fapi/v1/fundingRate to browsers');
+      }
+      throw err;
+    }
+  }
+
   // ── Trading ──
 
   /**
@@ -1170,6 +1202,57 @@ export class AsterPerpAdapter extends PerpAdapterBase {
       orderId: String(result.orderId),
       status: fromAsterStatus(result.status),
     };
+  }
+
+  /** Aster V3 inherits Binance Futures' algo API path
+   *  (`/fapi/v3/algo/futures/newOrderTwap`). If Aster renames the action in
+   *  a future revision the error surfaces directly rather than silently
+   *  falling back. */
+  async placeTwapOrder(params: PlaceTwapOrderParams, _signFn: EIP712SignFn): Promise<OrderResult> {
+    if (!this.hasCredentials()) {
+      return { success: false, orderId: null, error: 'Aster: credentials required' };
+    }
+    if (!(params.totalSize > 0)) {
+      return { success: false, orderId: null, error: 'totalSize must be > 0' };
+    }
+    if (!(params.durationMinutes > 0)) {
+      return { success: false, orderId: null, error: 'durationMinutes must be > 0' };
+    }
+
+    const markets = await this.getMarkets();
+    const canonical = this.fromApi(this.toApi(params.symbol));
+    const market = markets.find((m) => m.symbol === canonical);
+    if (!market) {
+      return { success: false, orderId: null, error: `Unknown symbol: ${params.symbol}` };
+    }
+    const roundToStep = (value: number, step: number): number => {
+      if (step <= 0) return value;
+      const decimals = Math.max(0, Math.round(-Math.log10(step)));
+      return Math.round(Math.round(value / step) * step * Math.pow(10, decimals)) / Math.pow(10, decimals);
+    };
+    const roundedSize = roundToStep(params.totalSize, market.lotSize);
+
+    const body: Record<string, string> = {
+      symbol: this.toApi(params.symbol),
+      side: toAsterSide(params.side),
+      quantity: String(roundedSize),
+      duration: String(Math.round(params.durationMinutes * 60)),
+    };
+    if (params.reduceOnly) body['reduceOnly'] = 'true';
+
+    try {
+      const result = await this.signedRequest<{ clientAlgoId?: string; algoId?: string | number }>(
+        'POST',
+        '/fapi/v3/algo/futures/newOrderTwap',
+        body,
+      );
+      return {
+        success: true,
+        orderId: result.algoId != null ? String(result.algoId) : result.clientAlgoId ?? null,
+      };
+    } catch (err) {
+      return { success: false, orderId: null, error: err instanceof Error ? err.message : 'TWAP order failed' };
+    }
   }
 
   async placeScaleOrder(params: PlaceScaleOrderParams, signFn: EIP712SignFn): Promise<OrderResult> {

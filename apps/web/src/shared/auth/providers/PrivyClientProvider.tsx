@@ -254,6 +254,15 @@ export default function PrivyClientProvider({ children }: PropsWithChildren) {
                 // Telegram Mini App에서는 TelegramAutoLogin이 telegram만 사용
                 // Web에서는 WalletButton이 wallet 옵션 제공
                 loginMethods: ['telegram', 'wallet'],
+                appearance: {
+                    walletList: [
+                        'detected_ethereum_wallets',
+                        'metamask',
+                        'coinbase_wallet',
+                        'rainbow',
+                        'wallet_connect',
+                    ],
+                },
             }}
         >
             <PrivyBackgroundInit>

@@ -107,7 +107,15 @@ export function AgentKeyManager({
     pacificaInitialType === 'registered' ? 'approved' : 'idle',
   );
   const [isApprovingPacificaBuilder, setIsApprovingPacificaBuilder] = useState(false);
-  const [lighterIntegratorStatus, setLighterIntegratorStatus] = useState<'idle' | 'approved'>('idle');
+  // Lighter's Enable Trading flow registers the API key AND approves our
+  // integrator atomically (see `handleLighterRegister`), so a persisted
+  // `type === 'registered'` implies the integrator is live — mirror the
+  // Pacifica pattern so re-opening the modal doesn't re-surface the
+  // "Approve Builder Fee" button for an already-approved key.
+  const lighterInitialType = useLighterAgentStore.getState().persisted.type;
+  const [lighterIntegratorStatus, setLighterIntegratorStatus] = useState<'idle' | 'approved'>(
+    lighterInitialType === 'registered' ? 'approved' : 'idle',
+  );
   const [isApprovingLighterIntegrator, setIsApprovingLighterIntegrator] = useState(false);
 
   const deps = usePerpDeps();
@@ -574,6 +582,60 @@ export function AgentKeyManager({
 
       {!collapsed && (
         <div className="px-4 pb-4 space-y-3">
+          {/* ── Pacifica ── (primary venue — listed first) */}
+          <div className="border border-dark-600 rounded-md p-3">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <img src="/chains/pacifica.svg" alt="Pacifica" className="w-4 h-4 rounded-full" />
+                <span className="text-xs font-medium text-white">Pacifica</span>
+              </div>
+              <StatusBadge status={pacificaStatus} />
+            </div>
+
+            {pacificaConnected && pacificaAddress && (
+              <div className="text-[10px] text-gray-400 mb-2">
+                Address: <span className="text-white font-mono">{truncateAddress(pacificaAddress)}</span>
+              </div>
+            )}
+
+            {pacificaConnected && pacificaAgentKey && (
+              <div className="text-[10px] text-gray-400 mb-2">
+                Agent: <span className="text-white font-mono">{truncateAddress(pacificaAgentKey)}</span>
+              </div>
+            )}
+
+            {pacificaConnected && (
+              <div className="space-y-1.5 mt-1">
+                {pacificaBuilderStatus === 'idle' ? (
+                  <button
+                    onClick={handlePacificaApproveBuilderCode}
+                    disabled={isApprovingPacificaBuilder}
+                    className="w-full py-1.5 text-[10px] font-medium rounded border border-primary/30 text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+                  >
+                    {isApprovingPacificaBuilder ? 'Approving...' : 'Approve Builder Fee'}
+                  </button>
+                ) : (
+                  <div className="text-[10px] text-[#5fd8ee]">Builder Fee Approved</div>
+                )}
+              </div>
+            )}
+
+            {!pacificaConnected && (
+              <>
+                <p className="text-[10px] text-gray-500 mb-2">
+                  Create a trading key to start trading on Pacifica.
+                </p>
+                <button
+                  onClick={handlePacificaRegister}
+                  disabled={isRegisteringPacifica}
+                  className="w-full py-1.5 text-[10px] font-medium rounded border border-primary/30 text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+                >
+                  {isRegisteringPacifica ? 'Enabling...' : 'Enable Trading'}
+                </button>
+              </>
+            )}
+          </div>
+
           {/* ── Hyperliquid ── */}
           <div className="border border-dark-600 rounded-md p-3">
             <div className="flex items-center justify-between mb-2">
@@ -630,60 +692,6 @@ export function AgentKeyManager({
               >
                 Enable Trading
               </button>
-            )}
-          </div>
-
-          {/* ── Pacifica ── */}
-          <div className="border border-dark-600 rounded-md p-3">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <img src="/chains/pacifica.svg" alt="Pacifica" className="w-4 h-4 rounded-full" />
-                <span className="text-xs font-medium text-white">Pacifica</span>
-              </div>
-              <StatusBadge status={pacificaStatus} />
-            </div>
-
-            {pacificaConnected && pacificaAddress && (
-              <div className="text-[10px] text-gray-400 mb-2">
-                Address: <span className="text-white font-mono">{truncateAddress(pacificaAddress)}</span>
-              </div>
-            )}
-
-            {pacificaConnected && pacificaAgentKey && (
-              <div className="text-[10px] text-gray-400 mb-2">
-                Agent: <span className="text-white font-mono">{truncateAddress(pacificaAgentKey)}</span>
-              </div>
-            )}
-
-            {pacificaConnected && (
-              <div className="space-y-1.5 mt-1">
-                {pacificaBuilderStatus === 'idle' ? (
-                  <button
-                    onClick={handlePacificaApproveBuilderCode}
-                    disabled={isApprovingPacificaBuilder}
-                    className="w-full py-1.5 text-[10px] font-medium rounded border border-primary/30 text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
-                  >
-                    {isApprovingPacificaBuilder ? 'Approving...' : 'Approve Builder Fee'}
-                  </button>
-                ) : (
-                  <div className="text-[10px] text-[#5fd8ee]">Builder Fee Approved</div>
-                )}
-              </div>
-            )}
-
-            {!pacificaConnected && (
-              <>
-                <p className="text-[10px] text-gray-500 mb-2">
-                  Create a trading key to start trading on Pacifica.
-                </p>
-                <button
-                  onClick={handlePacificaRegister}
-                  disabled={isRegisteringPacifica}
-                  className="w-full py-1.5 text-[10px] font-medium rounded border border-primary/30 text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
-                >
-                  {isRegisteringPacifica ? 'Enabling...' : 'Enable Trading'}
-                </button>
-              </>
             )}
           </div>
 

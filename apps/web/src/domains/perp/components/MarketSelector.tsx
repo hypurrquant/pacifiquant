@@ -8,11 +8,13 @@
  * 드롭다운: 전체 화면 오버레이 테이블 (Symbol, Last Price, 24h Change, Funding, Volume, OI)
  */
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import type { PerpMarket } from '../types/perp.types';
 import { usePerpStore } from '../stores/usePerpStore';
 import { useFavoritesStore } from '../stores/useFavoritesStore';
 import { usePerpDexs, useMarkets } from '../hooks/usePerpData';
+import { toHourlyRate, annualizeRate } from '@hq/core/defi/perp';
 
 interface Props {
   markets: PerpMarket[];
@@ -219,12 +221,10 @@ export function MarketSelector({ markets, selectedMarket, section = 'all' }: Pro
             <Stat label="24h Volume" value={`$${selectedMarket.volume24h.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} valueClass="text-white" />
             <Stat label="Open Interest" value={`$${(selectedMarket.openInterest * selectedMarket.markPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} valueClass="text-white" />
             <div className="flex gap-4">
-              <div className="flex flex-col items-start whitespace-nowrap">
-                <span className="text-xs leading-none" style={{ color: '#949E9C' }}>Funding</span>
-                <span className={`text-xs font-medium ${selectedMarket.fundingRate >= 0 ? 'text-[#5fd8ee]' : 'text-[#ED7088]'}`}>
-                  {(selectedMarket.fundingRate * 100).toFixed(4)}%
-                </span>
-              </div>
+              <FundingRatePopover
+                rate={selectedMarket.fundingRate}
+                dexId={store.selectedDex}
+              />
               <div className="flex flex-col items-start whitespace-nowrap">
                 <span className="text-xs leading-none" style={{ color: '#949E9C' }}>Countdown</span>
                 <span className="text-xs font-medium text-white tabular-nums">
@@ -524,4 +524,123 @@ function getRemainingMs(): number {
   nextHour.setUTCMinutes(0, 0, 0);
   nextHour.setUTCHours(now.getUTCHours() + 1);
   return nextHour.getTime() - now.getTime();
+}
+
+// ── Funding Rate Popover ──────────────────────────────────────────────────
+//
+// Hover/focus tooltip that surfaces the annualized rate alongside the raw
+// per-interval rate shown in the ticker. Positioned *above* the trigger so it
+// doesn't collide with the chart rendered directly below the ticker row.
+
+type DexIdLike = 'hyperliquid' | 'pacifica' | 'lighter' | 'aster';
+
+const FUNDING_CADENCE: Record<DexIdLike, { hours: number; label: string }> = {
+  hyperliquid: { hours: 1, label: '1h' },
+  pacifica:    { hours: 1, label: '1h' },
+  lighter:     { hours: 8, label: '8h' },
+  aster:       { hours: 8, label: '8h' },
+};
+
+function FundingRatePopover({ rate, dexId }: { rate: number; dexId: DexIdLike }) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const triggerRef = useRef<HTMLDivElement | null>(null);
+  const cadence = FUNDING_CADENCE[dexId];
+  const hourly = toHourlyRate(rate, dexId);
+  const apr = annualizeRate(hourly);
+  const rateColor = rate >= 0 ? '#5fd8ee' : '#ED7088';
+  const aprSign = apr >= 0 ? '+' : '';
+
+  // Popover is portaled to <body> so ancestor overflow:auto (stat row)
+  // doesn't clip it. Position is measured from the trigger's viewport rect
+  // on open so the arrow lines up with the trigger's horizontal center.
+  const showPopover = () => {
+    const el = triggerRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    setPos({ top: r.top, left: r.left + r.width / 2 });
+    setOpen(true);
+  };
+  const hidePopover = () => setOpen(false);
+
+  return (
+    <>
+      <div
+        ref={triggerRef}
+        className="flex flex-col items-start whitespace-nowrap cursor-help"
+        onMouseEnter={showPopover}
+        onMouseLeave={hidePopover}
+        onFocus={showPopover}
+        onBlur={hidePopover}
+        tabIndex={0}
+      >
+        <span className="text-xs leading-none" style={{ color: '#949E9C' }}>Funding</span>
+        <span className="text-xs font-medium" style={{ color: rateColor }}>
+          {(rate * 100).toFixed(4)}%
+        </span>
+      </div>
+
+      {open && pos && typeof document !== 'undefined' && createPortal(
+        <div
+          role="tooltip"
+          className="fixed min-w-[200px] rounded-md shadow-xl pointer-events-none"
+          style={{
+            top: pos.top - 8,
+            left: pos.left,
+            transform: 'translate(-50%, -100%)',
+            backgroundColor: '#0F1A1F',
+            border: '1px solid #273035',
+            borderLeft: '2px solid #AB9FF2',
+            zIndex: 9999,
+          }}
+        >
+          <div className="px-3 py-2 space-y-1.5">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[10px] uppercase tracking-wider" style={{ color: '#949E9C' }}>
+                Annualized
+              </span>
+              <span className="text-xs font-semibold tabular-nums" style={{ color: rateColor }}>
+                {aprSign}{apr.toFixed(2)}%
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[10px] uppercase tracking-wider" style={{ color: '#949E9C' }}>
+                Rate / {cadence.label}
+              </span>
+              <span className="text-[11px] tabular-nums text-white">
+                {(rate * 100).toFixed(4)}%
+              </span>
+            </div>
+            <div className="pt-1 text-[10px] leading-snug" style={{ color: '#5a6469', borderTop: '1px dashed #273035' }}>
+              <span className="block pt-1">
+                Settles every {cadence.label} on {dexId[0].toUpperCase() + dexId.slice(1)}. APR = rate × {8760 / cadence.hours} periods/yr.
+              </span>
+            </div>
+          </div>
+
+          {/* Pointer arrow (down) */}
+          <div
+            className="absolute left-1/2 top-full -translate-x-1/2 w-0 h-0"
+            aria-hidden
+            style={{
+              borderLeft: '5px solid transparent',
+              borderRight: '5px solid transparent',
+              borderTop: '5px solid #273035',
+            }}
+          />
+          <div
+            className="absolute left-1/2 top-full -translate-x-1/2 w-0 h-0"
+            aria-hidden
+            style={{
+              marginTop: -1,
+              borderLeft: '4px solid transparent',
+              borderRight: '4px solid transparent',
+              borderTop: '4px solid #0F1A1F',
+            }}
+          />
+        </div>,
+        document.body,
+      )}
+    </>
+  );
 }

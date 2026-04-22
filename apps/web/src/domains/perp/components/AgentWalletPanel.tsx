@@ -10,7 +10,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { useConnectModal } from '@rainbow-me/rainbowkit';
+import { usePrivy } from '@privy-io/react-auth';
 import { isHex, isAddress } from 'viem';
 import { getErrorMessage } from '@hq/core/lib/error';
 import { useAgentWalletStore, selectIsAgentActive } from '../stores/useAgentWalletStore';
@@ -31,7 +31,7 @@ export function AgentWalletPanel({ walletAddress, onComplete }: Props) {
   const adapter = useHyperliquidAdapter();
   const deps = usePerpDeps();
 
-  const { openConnectModal } = useConnectModal();
+  const { login: openConnectModal } = usePrivy();
 
   const [tab, setTab] = useState<Tab>('enable');
   const [isApproving, setIsApproving] = useState(false);

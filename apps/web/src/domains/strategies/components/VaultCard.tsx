@@ -1,42 +1,35 @@
 'use client';
 
 /**
- * VaultCard — hero-style card for a single strategy vault.
- *
- * The Strategies page used to drop users straight into configuration forms
- * (DeltaNeutralCard / MarketMakingCard / …). That forced people to understand
- * every knob before deciding which strategy even fits their risk appetite.
- *
- * VaultCard inverts the flow: first you pick a product (risk tier → expected
- * APY → one CTA), then you fine-tune. It's the same UX pattern cross-chain
- * yield vaults (Yearn, Beefy, Morpho) use, adapted for our 4-DEX perp stack.
+ * VaultCard — strategy hero tile modeled on Pacifica's Vaults/Lakes grid.
+ * Status pill on the left, APR pill on the right, title row, 2×2 stats,
+ * single CTA. Accent colors per risk tier stay subtle so the palette matches
+ * the Pacifica surface (soft purple + muted green).
  */
 
 import type { ReactNode } from 'react';
 
 export type VaultRisk = 'low' | 'med' | 'high';
 
-const RISK_META: Record<VaultRisk, { label: string; color: string; chip: string }> = {
-  low: { label: 'LOW RISK', color: '#5fd8ee', chip: 'bg-[#5fd8ee]/10 text-[#5fd8ee]' },
-  med: { label: 'MEDIUM',   color: '#FFA94D', chip: 'bg-[#FFA94D]/10 text-[#FFA94D]' },
-  high: { label: 'HIGH',    color: '#ED7088', chip: 'bg-[#ED7088]/10 text-[#ED7088]' },
+const RISK_META: Record<VaultRisk, { label: string; chipColor: string; chipBg: string; chipBorder: string }> = {
+  low:  { label: 'Low risk',    chipColor: '#6EE7B7', chipBg: 'rgba(110,231,183,0.08)', chipBorder: 'rgba(110,231,183,0.25)' },
+  med:  { label: 'Medium risk', chipColor: '#FFD08A', chipBg: 'rgba(255,208,138,0.08)', chipBorder: 'rgba(255,208,138,0.25)' },
+  high: { label: 'High risk',   chipColor: '#FFA3B4', chipBg: 'rgba(255,163,180,0.08)', chipBorder: 'rgba(255,163,180,0.25)' },
 };
+
+const PACIFICA_ACCENT = '#AB9FF2';
 
 interface VaultCardProps {
   readonly title: string;
   readonly description: string;
   readonly risk: VaultRisk;
-  /** "12.3%" or "Variable" — pre-formatted so the card stays presentational. */
   readonly apyLabel: string;
-  /** Short caption under the APY number ("Top cross-DEX spread (APR)"). */
   readonly apySubtitle: string;
-  /** Brand accent used on the header pill + CTA border. */
-  readonly accent: string;
-  /** Small icon or emoji in the header — purely decorative. */
+  /** Retained for API compatibility with callers; visual accents are unified
+   *  to the Pacifica purple and the risk chip. */
+  readonly accent?: string;
   readonly icon: ReactNode;
-  /** 2–3 secondary stats shown below the APY. */
   readonly stats: ReadonlyArray<{ readonly label: string; readonly value: string }>;
-  /** Whether the user has an agent wallet on at least one supported DEX. */
   readonly agentReady: boolean;
   readonly onConfigure: () => void;
 }
@@ -47,91 +40,85 @@ export function VaultCard({
   risk,
   apyLabel,
   apySubtitle,
-  accent,
   icon,
   stats,
   agentReady,
   onConfigure,
 }: VaultCardProps) {
-  const riskMeta = RISK_META[risk];
+  const rm = RISK_META[risk];
+  const aprIsNumeric = /^[+-]?\d/.test(apyLabel);
 
   return (
     <div
-      className="rounded-lg flex flex-col overflow-hidden transition-all hover:border-[#3a4852]"
-      style={{ backgroundColor: '#0F1A1F', border: '1px solid #273035' }}
+      className="rounded-xl p-5 flex flex-col gap-4 transition-colors"
+      style={{
+        backgroundColor: '#111820',
+        border: '1px solid #1F2A33',
+      }}
     >
-      {/* Accent ribbon — thin colored strip on top, a "vault card" visual convention. */}
-      <div style={{ height: 3, backgroundColor: accent }} />
-
-      <div className="p-5 flex flex-col gap-4">
-        {/* Header: icon + title + risk chip */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div
-              className="w-9 h-9 rounded-md flex items-center justify-center flex-shrink-0"
-              style={{ backgroundColor: `${accent}14`, border: `1px solid ${accent}33` }}
-            >
-              <span className="text-base" style={{ color: accent }}>{icon}</span>
-            </div>
-            <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-white truncate">{title}</h3>
-              <p className="text-[10px] mt-0.5 line-clamp-1" style={{ color: '#949E9C' }}>
-                {description}
-              </p>
-            </div>
-          </div>
-          <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded ${riskMeta.chip} flex-shrink-0`}>
-            {riskMeta.label}
-          </span>
-        </div>
-
-        {/* APY hero */}
-        <div>
-          <div className="flex items-baseline gap-1.5">
-            <span
-              className="text-3xl font-semibold font-mono tabular-nums tracking-tight"
-              style={{ color: accent }}
-            >
-              {apyLabel}
-            </span>
-            <span className="text-[10px]" style={{ color: '#5a6469' }}>est. APR</span>
-          </div>
-          <p className="text-[10px] mt-0.5" style={{ color: '#949E9C' }}>{apySubtitle}</p>
-        </div>
-
-        {/* Stats grid — 2 or 3 stats stacked responsively. */}
-        {stats.length > 0 && (
-          <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${stats.length}, 1fr)` }}>
-            {stats.map(s => (
-              <div
-                key={s.label}
-                className="rounded-md px-2.5 py-2"
-                style={{ backgroundColor: '#1B2429', border: '1px solid #273035' }}
-              >
-                <div className="text-[9px] uppercase tracking-wide" style={{ color: '#949E9C' }}>
-                  {s.label}
-                </div>
-                <div className="text-xs font-mono tabular-nums text-white mt-0.5 truncate">
-                  {s.value}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* CTA + agent readiness hint */}
-        <button
-          onClick={onConfigure}
-          className="w-full py-2 rounded-md text-xs font-semibold transition-colors"
+      {/* Top pills row — lakes pattern: status pill left, APR pill right */}
+      <div className="flex items-center justify-between">
+        <span
+          className="text-[10px] font-medium px-2 py-0.5 rounded-full"
+          style={{ color: rm.chipColor, backgroundColor: rm.chipBg, border: `1px solid ${rm.chipBorder}` }}
+        >
+          {rm.label}
+        </span>
+        <span
+          className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
           style={{
-            backgroundColor: agentReady ? accent : `${accent}22`,
-            color: agentReady ? '#0F1A1E' : accent,
-            border: `1px solid ${accent}`,
+            color: aprIsNumeric ? PACIFICA_ACCENT : '#949E9C',
+            backgroundColor: aprIsNumeric ? 'rgba(171,159,242,0.1)' : 'rgba(148,158,156,0.08)',
+            border: `1px solid ${aprIsNumeric ? 'rgba(171,159,242,0.3)' : 'rgba(148,158,156,0.2)'}`,
           }}
         >
-          {agentReady ? 'Configure & Deploy' : 'Enable Trading to Deploy'}
-        </button>
+          {aprIsNumeric ? `${apyLabel} APR` : apyLabel}
+        </span>
       </div>
+
+      {/* Title + icon */}
+      <div className="flex items-start gap-3">
+        <div
+          className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+          style={{ backgroundColor: 'rgba(171,159,242,0.08)', border: '1px solid rgba(171,159,242,0.2)' }}
+        >
+          <span className="text-lg" style={{ color: PACIFICA_ACCENT }}>{icon}</span>
+        </div>
+        <div className="min-w-0 flex-1">
+          <h3 className="text-base font-semibold text-white leading-tight">{title}</h3>
+          <p className="text-xs mt-1 leading-snug" style={{ color: '#8F9BA4' }}>
+            {description}
+          </p>
+        </div>
+      </div>
+
+      {/* APR caption */}
+      <p className="text-[11px]" style={{ color: '#6B7580' }}>{apySubtitle}</p>
+
+      {/* Stats grid — Pacifica lakes uses a 2×2 icon+label+value grid */}
+      {stats.length > 0 && (
+        <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+          {stats.map((s) => (
+            <div key={s.label} className="flex flex-col gap-0.5">
+              <span className="text-[10px]" style={{ color: '#6B7580' }}>{s.label}</span>
+              <span className="text-xs text-white tabular-nums">{s.value}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* CTA — lakes uses outline buttons; we keep a single action per card */}
+      <button
+        onClick={onConfigure}
+        className="w-full py-2 rounded-lg text-xs font-semibold transition-colors"
+        style={{
+          backgroundColor: agentReady ? PACIFICA_ACCENT : 'transparent',
+          color: agentReady ? '#0B1018' : PACIFICA_ACCENT,
+          border: `1px solid ${PACIFICA_ACCENT}${agentReady ? '' : '55'}`,
+        }}
+      >
+        {agentReady ? 'Configure & Deploy' : 'Enable Trading to Deploy'}
+      </button>
     </div>
   );
 }

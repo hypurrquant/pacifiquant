@@ -34,6 +34,8 @@ import type {
   OrderSide,
   PlaceOrderParams,
   PlaceScaleOrderParams,
+  PlaceTwapOrderParams,
+  MarketFundingPoint,
   CancelOrderParams,
   ModifyOrderParams,
   UpdateLeverageParams,
@@ -892,6 +894,27 @@ export class PacificaPerpAdapter extends PerpAdapterBase {
     }
   }
 
+  /** Pacifica's shared `fetchPacifica` helper unwraps `{success, data, …}`
+   *  for us, so `rows` is already the entries array. Each row uses
+   *  `created_at` (ms) and a string `funding_rate`. */
+  async getMarketFundingHistory(symbol: string, startTime?: number): Promise<MarketFundingPoint[]> {
+    const base = symbol.includes('-') ? symbol.split('-')[0] : symbol;
+    try {
+      const rows = await fetchPacificaOrNull<ReadonlyArray<{
+        readonly created_at: number;
+        readonly funding_rate: string;
+      }>>(`/funding_rate/history?symbol=${encodeURIComponent(base)}&limit=1000`);
+      if (!rows || rows.length === 0) return [];
+      const cutoff = startTime ?? Date.now() - 24 * 60 * 60 * 1000;
+      return rows
+        .map((r) => ({ ts: r.created_at, fundingRate: parseFloat(r.funding_rate) }))
+        .filter((p) => p.ts >= cutoff && Number.isFinite(p.fundingRate))
+        .sort((a, b) => a.ts - b.ts);
+    } catch {
+      return [];
+    }
+  }
+
   // ============================================================
   // Trading (Ed25519 signed)
   // ============================================================
@@ -899,7 +922,14 @@ export class PacificaPerpAdapter extends PerpAdapterBase {
   async placeOrder(params: PlaceOrderParams, _signFn: EIP712SignFn): Promise<OrderResult> {
     const side = orderSideToApi(params.side);
     const isMarket = params.type === 'market';
-    const isStop = params.type === 'stop_market' || params.type === 'stop_limit';
+    // Pacifica's stop-order endpoint covers both stop and take triggers —
+    // direction is inferred from (side, trigger_price). Previously take_*
+    // fell through to the plain limit endpoint and executed at mark.
+    const isStop = params.type === 'stop_market'
+      || params.type === 'stop_limit'
+      || params.type === 'take_market'
+      || params.type === 'take_limit';
+    const isLimitTrigger = params.type === 'stop_limit' || params.type === 'take_limit';
 
     try {
       const market = await this.getMarketBySymbol(params.symbol);
@@ -935,7 +965,7 @@ export class PacificaPerpAdapter extends PerpAdapterBase {
           trigger_price: roundedTriggerPrice != null ? formatSteppedValue(roundedTriggerPrice, market.tickSize) : '0',
           reduce_only: reduceOnly,
         };
-        if (params.type === 'stop_limit' && roundedPrice != null) {
+        if (isLimitTrigger && roundedPrice != null) {
           stopPayload.price = formatSteppedValue(roundedPrice, market.tickSize);
         }
 
@@ -990,6 +1020,17 @@ export class PacificaPerpAdapter extends PerpAdapterBase {
    * Scale order: split into N limit orders between startPrice and endPrice.
    * Pacifica has no native bulk order API — we submit individual limit orders.
    */
+  /** Pacifica has no native TWAP endpoint. UI gates this, but we also fail
+   *  loudly here to avoid a silent client-side slicing fallback that would
+   *  stop the moment the tab closed. */
+  async placeTwapOrder(_params: PlaceTwapOrderParams, _signFn: EIP712SignFn): Promise<OrderResult> {
+    return {
+      success: false,
+      orderId: null,
+      error: 'TWAP is not supported on Pacifica (no native endpoint). Use Hyperliquid, Lighter, or Aster for TWAP execution.',
+    };
+  }
+
   async placeScaleOrder(params: PlaceScaleOrderParams, _signFn: EIP712SignFn): Promise<OrderResult> {
     const n = Math.max(2, Math.min(20, Math.floor(params.totalOrders)));
     const { startPrice, endPrice, totalSize, sizeSkew } = params;

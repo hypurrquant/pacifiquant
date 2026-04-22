@@ -81,6 +81,44 @@ export function OrderForm({ market, accountState, activeAssetData, spotBalances,
   const [isUpdatingLeverage, setIsUpdatingLeverage] = useState(false);
   const [isUpdatingMargin, setIsUpdatingMargin] = useState(false);
   const [showProMenu, setShowProMenu] = useState(false);
+  // Pacifica has no native TWAP endpoint so the menu item is gated below.
+  const [twapModal, setTwapModal] = useState<{ size: string; durationMin: string; reduceOnly: boolean } | null>(null);
+  const [twapSubmitting, setTwapSubmitting] = useState(false);
+  const twapSupported = store.selectedDex !== 'pacifica';
+  const handleTwapSubmit = useCallback(async () => {
+    if (!twapModal || !market) return;
+    if (!isAgentActiveFromStore) { onEnableTrading(); return; }
+    const total = parseFloat(twapModal.size);
+    const mins = parseFloat(twapModal.durationMin);
+    if (!(total > 0) || !(mins > 0)) {
+      deps.showToast({ title: 'Enter size and duration', type: 'warning' });
+      return;
+    }
+    setTwapSubmitting(true);
+    try {
+      const signFn = deps.getSignFn();
+      const vaultAddress = deps.getVaultAddress() ?? undefined;
+      const res = await adapter.placeTwapOrder({
+        symbol: market.symbol,
+        side: orderForm.side,
+        totalSize: total,
+        durationMinutes: mins,
+        reduceOnly: twapModal.reduceOnly,
+        vaultAddress,
+      }, signFn);
+      if (res.success) {
+        deps.showToast({ title: 'TWAP started', type: 'success' });
+        setTwapModal(null);
+      } else {
+        deps.showToast({ title: 'TWAP failed', message: res.error ?? 'Unknown error', type: 'warning' });
+      }
+    } catch (err) {
+      const m = err instanceof Error ? err.message : String(err);
+      deps.showToast({ title: 'TWAP failed', message: m, type: 'warning' });
+    } finally {
+      setTwapSubmitting(false);
+    }
+  }, [twapModal, market, isAgentActiveFromStore, onEnableTrading, adapter, deps, orderForm.side]);
   const [showTpSl, setShowTpSl] = useState(false);
   const [showTifMenu, setShowTifMenu] = useState(false);
   const [showLevModal, setShowLevModal] = useState(false);
@@ -379,10 +417,16 @@ export function OrderForm({ market, accountState, activeAssetData, spotBalances,
                   Take Market
                 </button>
                 <button
-                  onClick={() => { deps.showToast({ title: 'TWAP coming soon', type: 'info' }); setShowProMenu(false); }}
-                  className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-[#273035]"
+                  disabled={!twapSupported}
+                  title={twapSupported ? undefined : 'Not supported on Pacifica'}
+                  onClick={() => {
+                    if (!twapSupported) return;
+                    setTwapModal({ size: orderForm.size ?? '', durationMin: '30', reduceOnly: false });
+                    setShowProMenu(false);
+                  }}
+                  className={`w-full text-left px-3 py-1.5 text-xs ${twapSupported ? 'text-gray-300 hover:bg-[#273035]' : 'text-gray-600 cursor-not-allowed'}`}
                 >
-                  TWAP
+                  TWAP{!twapSupported && <span className="ml-2 text-[9px] text-gray-600">(Pacifica unsupported)</span>}
                 </button>
               </div>
             </>
@@ -955,6 +999,62 @@ export function OrderForm({ market, accountState, activeAssetData, spotBalances,
                 className="w-full py-2 rounded text-xs font-semibold bg-[#5fd8ee] text-[#0F1A1E] hover:bg-[#93E3F3] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {isUpdatingLeverage ? 'Updating...' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {twapModal && (
+        <>
+          <div className="fixed inset-0 z-40" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }} onClick={() => setTwapModal(null)} />
+          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[320px] rounded-lg p-4" style={{ backgroundColor: '#0F1A1F', border: '1px solid #273035' }}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-semibold text-white">TWAP · {market?.symbol ?? ''}</span>
+              <button onClick={() => setTwapModal(null)} className="text-gray-500 hover:text-white" aria-label="Close">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="space-y-2.5">
+              <label className="block">
+                <span className="block text-[10px] mb-1" style={{ color: '#949E9C' }}>Total Size ({market?.baseAsset ?? ''})</span>
+                <input
+                  value={twapModal.size}
+                  onChange={(e) => setTwapModal((prev) => prev ? { ...prev, size: e.target.value } : prev)}
+                  inputMode="decimal"
+                  className="w-full bg-[#0B141A] text-white text-sm px-2.5 py-1.5 rounded tabular-nums focus:outline-none"
+                  style={{ border: '1px solid #273035' }}
+                />
+              </label>
+              <label className="block">
+                <span className="block text-[10px] mb-1" style={{ color: '#949E9C' }}>Duration (minutes)</span>
+                <input
+                  value={twapModal.durationMin}
+                  onChange={(e) => setTwapModal((prev) => prev ? { ...prev, durationMin: e.target.value } : prev)}
+                  inputMode="numeric"
+                  className="w-full bg-[#0B141A] text-white text-sm px-2.5 py-1.5 rounded tabular-nums focus:outline-none"
+                  style={{ border: '1px solid #273035' }}
+                />
+              </label>
+              <label className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={twapModal.reduceOnly}
+                  onChange={(e) => setTwapModal((prev) => prev ? { ...prev, reduceOnly: e.target.checked } : prev)}
+                />
+                Reduce Only
+              </label>
+              <div className="text-[10px] pt-1" style={{ color: '#5a6469' }}>
+                Side: <span className="text-white">{orderForm.side === 'long' ? 'Buy / Long' : 'Sell / Short'}</span> · Venue handles slicing.
+              </div>
+              <button
+                onClick={handleTwapSubmit}
+                disabled={twapSubmitting}
+                className="w-full py-2 rounded text-xs font-semibold bg-[#5fd8ee] text-[#0F1A1E] hover:bg-[#93E3F3] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {twapSubmitting ? 'Starting…' : 'Start TWAP'}
               </button>
             </div>
           </div>

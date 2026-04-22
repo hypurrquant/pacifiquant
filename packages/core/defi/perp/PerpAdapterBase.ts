@@ -17,8 +17,10 @@ import type {
   PerpPosition,
   PerpOrder,
   Fill,
+  MarketFundingPoint,
   PlaceOrderParams,
   PlaceScaleOrderParams,
+  PlaceTwapOrderParams,
   CancelOrderParams,
   ModifyOrderParams,
   UpdateLeverageParams,
@@ -61,10 +63,12 @@ export abstract class PerpAdapterBase implements IPerpAdapter {
   abstract getOrderHistory(address: string, limit?: number): Promise<PerpOrder[]>;
   abstract getFills(address: string, limit?: number): Promise<Fill[]>;
   abstract getFundingHistory(address: string, startTime?: number): Promise<FundingHistoryEntry[]>;
+  abstract getMarketFundingHistory(symbol: string, startTime?: number): Promise<MarketFundingPoint[]>;
 
   // ── Trading ──
   abstract placeOrder(params: PlaceOrderParams, signFn: EIP712SignFn): Promise<OrderResult>;
   abstract placeScaleOrder(params: PlaceScaleOrderParams, signFn: EIP712SignFn): Promise<OrderResult>;
+  abstract placeTwapOrder(params: PlaceTwapOrderParams, signFn: EIP712SignFn): Promise<OrderResult>;
   abstract cancelOrder(params: CancelOrderParams, signFn: EIP712SignFn): Promise<OrderResult>;
   abstract modifyOrder(params: ModifyOrderParams, signFn: EIP712SignFn): Promise<OrderResult>;
   abstract updateLeverage(params: UpdateLeverageParams, signFn: EIP712SignFn): Promise<void>;

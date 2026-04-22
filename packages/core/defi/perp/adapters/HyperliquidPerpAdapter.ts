@@ -28,6 +28,8 @@ import type {
   Fill,
   PlaceOrderParams,
   PlaceScaleOrderParams,
+  PlaceTwapOrderParams,
+  MarketFundingPoint,
   CancelOrderParams,
   ModifyOrderParams,
   UpdateLeverageParams,
@@ -1007,6 +1009,23 @@ export class HyperliquidPerpAdapter extends PerpAdapterBase {
       }));
   }
 
+  /** HL returns fundingRate as a string — parse and pre-sort so chart code
+   *  doesn't have to. startTime defaults to the last 24h. */
+  async getMarketFundingHistory(symbol: string, startTime?: number): Promise<MarketFundingPoint[]> {
+    const coin = symbol.includes('-') ? symbol.split('-')[0] : symbol;
+    const raw = await this.postInfo<Array<{ coin: string; fundingRate: string; time: number }>>(
+      'fundingHistory',
+      {
+        coin,
+        startTime: startTime ?? Date.now() - 24 * 60 * 60 * 1000,
+      },
+    );
+    return raw
+      .map(r => ({ ts: r.time, fundingRate: parseFloat(r.fundingRate) }))
+      .filter(p => Number.isFinite(p.fundingRate))
+      .sort((a, b) => a.ts - b.ts);
+  }
+
   // ============================================================
   // Agent Wallet
   // ============================================================
@@ -1215,6 +1234,54 @@ export class HyperliquidPerpAdapter extends PerpAdapterBase {
    *   - skew < 1.0 → more size at start
    * All N orders submitted in a single bulk action (one signature).
    */
+  /**
+   * HL slices the parent server-side at 30s intervals; we only sign the
+   * `twapOrder` exchange action. See HL exchange-endpoint docs.
+   */
+  async placeTwapOrder(params: PlaceTwapOrderParams, signFn: EIP712SignFn): Promise<OrderResult> {
+    await this.ensureMeta();
+    const entry = this.getAssetEntry(params.symbol);
+    const orderAssetId = this.getOrderAssetId(params.symbol);
+    const szDecimals = entry.szDecimals;
+    if (!(params.totalSize > 0)) throw new ValidationError('totalSize must be > 0');
+    if (!(params.durationMinutes > 0)) throw new ValidationError('durationMinutes must be > 0');
+
+    const nonce = this.getNonce();
+    const action = {
+      type: 'twapOrder',
+      twap: {
+        a: orderAssetId,
+        b: params.side === 'long',
+        s: HyperliquidPerpAdapter.roundHlSize(params.totalSize, szDecimals),
+        r: params.reduceOnly ?? false,
+        m: Math.round(params.durationMinutes),
+        t: params.randomize ?? false,
+      },
+    };
+
+    const signature = await this.signL1Action(action, nonce, params.vaultAddress, signFn);
+    try {
+      const result = await this.postExchange(action, signature, nonce, params.vaultAddress) as {
+        status: string;
+        response?: string | { type: string; data?: { status?: { running?: { twapId?: number } }; error?: string } };
+      };
+      if (result.status === 'err') {
+        const msg = typeof result.response === 'string' ? result.response : 'HL rejected TWAP order';
+        return { success: false, orderId: null, error: msg };
+      }
+      if (typeof result.response !== 'string' && result.response?.data) {
+        const d = result.response.data;
+        if (d.error) return { success: false, orderId: null, error: d.error };
+        const twapId = d.status?.running?.twapId ?? null;
+        return { success: true, orderId: twapId != null ? String(twapId) : null };
+      }
+      return { success: true, orderId: null };
+    } catch (err) {
+      logger.error('placeTwapOrder failed', { err });
+      return { success: false, orderId: null, error: err instanceof Error ? err.message : 'TWAP order failed' };
+    }
+  }
+
   async placeScaleOrder(params: PlaceScaleOrderParams, signFn: EIP712SignFn): Promise<OrderResult> {
     await this.ensureMeta();
     const entry = this.getAssetEntry(params.symbol);

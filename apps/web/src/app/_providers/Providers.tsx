@@ -7,8 +7,6 @@
 
 import React, { PropsWithChildren } from "react";
 import { WagmiProvider } from "wagmi";
-import { RainbowKitProvider, darkTheme } from "@rainbow-me/rainbowkit";
-import "@rainbow-me/rainbowkit/styles.css";
 import { wagmiConfig } from "@/infra/lib/wagmi/config";
 import { PrivyClientProvider } from "@/shared/auth/providers";
 import { initChainConfig } from '@hq/core/config/chains';
@@ -34,7 +32,6 @@ export default function Providers({ children }: PropsWithChildren) {
     return (
         <QueryProvider>
             <WagmiProvider config={wagmiConfig}>
-            <RainbowKitProvider theme={darkTheme({ accentColor: '#2dd4a8', borderRadius: 'medium' })}>
             <RpcProvider>
             <ErrorHandlerInit>
                 <QueryStoreSync>
@@ -44,7 +41,6 @@ export default function Providers({ children }: PropsWithChildren) {
                 </QueryStoreSync>
             </ErrorHandlerInit>
             </RpcProvider>
-            </RainbowKitProvider>
             </WagmiProvider>
         </QueryProvider>
     );

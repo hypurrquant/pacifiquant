@@ -33,6 +33,8 @@ import type {
   Fill,
   PlaceOrderParams,
   PlaceScaleOrderParams,
+  PlaceTwapOrderParams,
+  MarketFundingPoint,
   CancelOrderParams,
   ModifyOrderParams,
   UpdateLeverageParams,
@@ -802,6 +804,13 @@ export class LighterPerpAdapter extends PerpAdapterBase {
     return [];
   }
 
+  async getMarketFundingHistory(_symbol: string, _startTime?: number): Promise<MarketFundingPoint[]> {
+    // Lighter does not publish a historical funding rate endpoint. The UI
+    // surfaces a "no public feed" label for this DEX instead of rendering
+    // an empty chart with an unexplained gap.
+    return [];
+  }
+
   // ── Trading Helpers ──
 
   /**
@@ -923,6 +932,45 @@ export class LighterPerpAdapter extends PerpAdapterBase {
    * Scale order: split into N limit orders between startPrice and endPrice.
    * Lighter has no native bulk order API — we submit individual limit orders.
    */
+  /** Lighter: orderType=6 on the shared createOrder path; venue handles
+   *  slicing and cadence once the type is set. `price` is the last mark
+   *  as a reference value — the wire needs a non-zero price. */
+  async placeTwapOrder(params: PlaceTwapOrderParams, _signFn: EIP712SignFn): Promise<OrderResult> {
+    const client = await this.ensureSignerClient();
+    await this.ensureMarketsLoaded();
+    const marketId = await this.getMarketId(params.symbol);
+    const detail = this.getMarketDetail(marketId);
+    if (!(params.totalSize > 0)) {
+      return { success: false, orderId: null, error: 'totalSize must be > 0' };
+    }
+    const baseAmount = this.toTicks(params.totalSize, detail.supported_size_decimals);
+    const clientOrderIndex = this.nextClientOrderIndex();
+    const isAsk = params.side === 'short';
+    const priceTicks = this.toTicks(detail.last_trade_price, detail.supported_price_decimals);
+
+    try {
+      const [, txHash, error] = await client.createOrder({
+        marketIndex: marketId,
+        clientOrderIndex,
+        baseAmount,
+        price: priceTicks,
+        isAsk,
+        orderType: 6,              // ORDER_TYPE_TWAP
+        timeInForce: 1,            // GOOD_TILL_TIME
+        reduceOnly: params.reduceOnly ?? false,
+        triggerPrice: 0,
+        integratorAccountIndex: INTEGRATOR_ACCOUNT_INDEX,
+        integratorTakerFee: INTEGRATOR_FEE,
+        integratorMakerFee: INTEGRATOR_FEE,
+      });
+      if (error) return { success: false, orderId: null, error };
+      return { success: true, orderId: txHash };
+    } catch (err) {
+      logger.error('placeTwapOrder failed', { err });
+      return { success: false, orderId: null, error: err instanceof Error ? err.message : 'TWAP order failed' };
+    }
+  }
+
   async placeScaleOrder(params: PlaceScaleOrderParams, _signFn: EIP712SignFn): Promise<OrderResult> {
     const client = await this.ensureSignerClient();
     await this.ensureMarketsLoaded();

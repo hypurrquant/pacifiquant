@@ -9,6 +9,7 @@
  */
 
 import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import { FundingHistoryDrillDown } from './FundingHistoryDrillDown';
 import {
   HyperliquidPerpAdapter,
   PacificaPerpAdapter,
@@ -316,6 +317,7 @@ export function FundingArbScanner() {
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<number | null>(null);
   const [arbModal, setArbModal] = useState<ArbModalState | null>(null);
+  const [expandedSymbol, setExpandedSymbol] = useState<string | null>(null);
 
   // Rolling spread history per symbol, survives reload via localStorage. Kept
   // in a ref + a sibling state counter so appending doesn't trigger the
@@ -485,14 +487,24 @@ export function FundingArbScanner() {
         ) : (
           rows.slice(0, 20).map((row) => {
             const isProfitable = row.opportunity !== null && row.opportunity.spreadAnnualized > 10;
+            const isExpanded = expandedSymbol === row.symbol;
             return (
+              <div key={row.symbol}>
               <div
-                key={row.symbol}
-                className={`grid px-4 py-1 text-xs hover:bg-[#1a2830] transition-colors items-center ${isProfitable ? 'bg-[#5fd8ee]/5' : ''}`}
+                role="button"
+                tabIndex={0}
+                onClick={() => setExpandedSymbol(isExpanded ? null : row.symbol)}
+                onKeyDown={(e) => { if (e.key === 'Enter') setExpandedSymbol(isExpanded ? null : row.symbol); }}
+                className={`grid px-4 py-1 text-xs hover:bg-[#1a2830] transition-colors items-center cursor-pointer ${isProfitable ? 'bg-[#5fd8ee]/5' : ''} ${isExpanded ? 'bg-[#1a2830]' : ''}`}
                 style={{ gridTemplateColumns: '1fr 0.7fr 0.7fr 0.7fr 0.7fr 0.8fr 0.9fr 0.5fr' }}
               >
                 {/* Symbol */}
-                <span className="text-white truncate font-medium">{row.symbol}-PERP</span>
+                <span className="text-white truncate font-medium flex items-center gap-1">
+                  <span aria-hidden className="text-[9px]" style={{ color: '#5a6469' }}>
+                    {isExpanded ? '▾' : '▸'}
+                  </span>
+                  {row.symbol}-PERP
+                </span>
 
                 {/* Pacifica Rate (primary) */}
                 <RateCell entry={row.rates.pacifica} />
@@ -556,7 +568,7 @@ export function FundingArbScanner() {
                 {/* Execute */}
                 {isProfitable ? (
                   <button
-                    onClick={() => handleArbClick(row)}
+                    onClick={(e) => { e.stopPropagation(); handleArbClick(row); }}
                     className="ml-auto px-2 py-0.5 rounded text-[10px] font-semibold transition-colors bg-[#5fd8ee]/15 text-[#5fd8ee] hover:bg-[#5fd8ee]/25"
                   >
                     Arb
@@ -564,6 +576,13 @@ export function FundingArbScanner() {
                 ) : (
                   <span />
                 )}
+              </div>
+              {isExpanded && (
+                <FundingHistoryDrillDown
+                  symbol={row.symbol}
+                  onClose={() => setExpandedSymbol(null)}
+                />
+              )}
               </div>
             );
           })

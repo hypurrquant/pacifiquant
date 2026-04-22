@@ -11,7 +11,7 @@ import type { FundingHistoryEntry, OrderStatus } from '@hq/core/defi/perp';
 import { usePerpStore } from '../stores/usePerpStore';
 import { usePerpDeps } from '../providers/PerpDepsProvider';
 import { usePerpAdapter, useDexId } from '../hooks/usePerpAdapter';
-import { useAgentWalletStore, selectIsAgentActive } from '../stores/useAgentWalletStore';
+import { useAgentActive } from '../hooks/useAgentActive';
 import { fmtSizeByLot } from '../utils/displayComputations';
 
 /** Format size with per-market decimals (BTC: 5dp, ETH: 4dp, etc.). Falls
@@ -871,7 +871,7 @@ function OrderHistoryContent({ orderHistory, markets }: { orderHistory: PerpOrde
 function TpSlModal({ position, onClose }: { position: PerpPosition; onClose: () => void }) {
   const adapter = usePerpAdapter();
   const deps = usePerpDeps();
-  const isAgentActive = useAgentWalletStore(selectIsAgentActive);
+  const isAgentActive = useAgentActive();
 
   const [tpPrice, setTpPrice] = useState('');
   const [slPrice, setSlPrice] = useState('');
@@ -910,36 +910,54 @@ function TpSlModal({ position, onClose }: { position: PerpPosition; onClose: () 
     const sl = slPrice ? parseFloat(slPrice) : null;
     const signFn = deps.getSignFn();
     const vaultAddress = deps.getVaultAddress() ?? undefined;
+    const closeSide = isLong ? ('short' as const) : ('long' as const);
+    // Separate trigger orders per leg — only HL's adapter reads the old
+    // `tpsl` attachment, so a single limit+tpsl closed at mark on the
+    // other three venues instead of waiting for the trigger.
+    const legs: Array<{ label: 'TP' | 'SL'; type: 'take_market' | 'stop_market'; price: number }> = [];
+    if (tp !== null) legs.push({ label: 'TP', type: 'take_market', price: tp });
+    if (sl !== null) legs.push({ label: 'SL', type: 'stop_market', price: sl });
+
     setIsSubmitting(true);
-    try {
-      // TODO: TP/SL should place separate trigger orders (take_market / stop_market)
-      // instead of a single limit order with tpsl attachment. The current
-      // implementation closes the position immediately at mark price rather
-      // than setting conditional triggers. Needs refactoring to place 1-2
-      // individual trigger orders with reduceOnly: true.
-      await adapter.placeOrder({
-        symbol: position.symbol,
-        side: isLong ? 'short' : 'long',
-        type: 'limit',
-        size: position.size,
-        price: position.markPrice,
-        leverage: position.leverage,
-        reduceOnly: true,
-        timeInForce: 'gtc',
-        tpsl: {
-          tp: tp !== null ? { price: tp, trigger: 'mark' as const } : undefined,
-          sl: sl !== null ? { price: sl, trigger: 'mark' as const } : undefined,
-        },
-        vaultAddress,
-      }, signFn);
-      deps.showToast({ title: 'TP/SL set successfully', type: 'success' });
-      onClose();
-    } catch (err) {
-      const e = err as { message?: string } | null;
-      deps.showToast({ title: 'Failed to set TP/SL', message: e?.message, type: 'warning' });
-    } finally {
-      setIsSubmitting(false);
+    const results = await Promise.allSettled(
+      legs.map((leg) =>
+        adapter.placeOrder({
+          symbol: position.symbol,
+          side: closeSide,
+          type: leg.type,
+          size: position.size,
+          triggerPrice: leg.price,
+          leverage: position.leverage,
+          reduceOnly: true,
+          timeInForce: 'gtc',
+          vaultAddress,
+        }, signFn).then((res) => ({ leg, res })),
+      ),
+    );
+    setIsSubmitting(false);
+
+    const failures: string[] = [];
+    for (let i = 0; i < results.length; i++) {
+      const r = results[i];
+      const leg = legs[i];
+      if (r.status === 'rejected') {
+        const m = r.reason instanceof Error ? r.reason.message : String(r.reason);
+        failures.push(`${leg.label}: ${m}`);
+      } else if (!r.value.res.success) {
+        failures.push(`${leg.label}: ${r.value.res.error ?? 'unknown error'}`);
+      }
     }
+    if (failures.length === 0) {
+      const placed = legs.map((l) => l.label).join(' + ');
+      deps.showToast({ title: `${placed} set successfully`, type: 'success' });
+      onClose();
+      return;
+    }
+    deps.showToast({
+      title: failures.length === legs.length ? 'Failed to set TP/SL' : 'Partial TP/SL failure',
+      message: failures.join(' · '),
+      type: 'warning',
+    });
   }
 
   return (

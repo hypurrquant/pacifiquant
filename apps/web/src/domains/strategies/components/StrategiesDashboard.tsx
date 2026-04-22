@@ -55,10 +55,12 @@ export function StrategiesDashboard() {
   return (
     <div className="min-h-[calc(100vh-4rem)] p-4 md:p-6" style={{ backgroundColor: '#0F1A1E' }}>
       <div className="max-w-[1600px] mx-auto space-y-6">
-        {/* Page heading */}
+        {/* Page heading — Pacifica lakes pattern: oversized title above a soft
+            secondary line. Sized up from the old dense h1 so the page reads
+            as a destination rather than a tool palette. */}
         <div>
-          <h1 className="text-xl font-semibold text-white">Strategies</h1>
-          <p className="text-xs mt-1" style={{ color: '#949E9C' }}>
+          <h1 className="text-2xl md:text-[28px] font-semibold text-white tracking-tight">Strategies</h1>
+          <p className="text-sm mt-1.5" style={{ color: '#8F9BA4' }}>
             Pick a vault by risk tier. Your agent wallet executes across 4 DEXs.
           </p>
         </div>
@@ -79,9 +81,9 @@ export function StrategiesDashboard() {
         {/* 2 — Vault selector: either the picker hero or a focus breadcrumb */}
         {selectedVault === null ? (
           <div>
-            <div className="flex items-baseline justify-between mb-3">
-              <h2 className="text-sm font-semibold text-white">Choose your strategy</h2>
-              <span className="text-[10px]" style={{ color: '#5a6469' }}>
+            <div className="flex items-baseline justify-between mb-4">
+              <h2 className="text-lg font-semibold text-white">Choose your strategy</h2>
+              <span className="text-[11px]" style={{ color: '#6B7580' }}>
                 APR estimates are live, from the same feeds the detail cards use
               </span>
             </div>

@@ -61,12 +61,12 @@ export function AgentStatusStrip() {
   return (
     <>
       <div
-        className="rounded-lg px-4 py-3 flex items-center gap-3 flex-wrap"
-        style={{ backgroundColor: '#0F1A1F', border: '1px solid #273035' }}
+        className="rounded-xl px-4 py-3 flex items-center gap-3 flex-wrap"
+        style={{ backgroundColor: '#111820', border: '1px solid #1F2A33' }}
       >
         <div className="flex items-center gap-2 flex-shrink-0">
           <span className="text-xs font-semibold text-white">Agent Wallets</span>
-          <span className="text-[10px] tabular-nums" style={{ color: readyCount === 4 ? '#5fd8ee' : '#949E9C' }}>
+          <span className="text-[10px] tabular-nums" style={{ color: readyCount === 4 ? '#6EE7B7' : '#8F9BA4' }}>
             {readyCount}/4 enabled
           </span>
         </div>
@@ -77,26 +77,26 @@ export function AgentStatusStrip() {
             return (
               <div
                 key={dex}
-                className="flex items-center gap-1.5 rounded px-2 py-1"
+                className="flex items-center gap-1.5 rounded-full px-2.5 py-1"
                 style={{
-                  border: `1px solid ${isActive ? '#5fd8ee33' : '#273035'}`,
-                  backgroundColor: isActive ? 'rgba(80,210,193,0.06)' : '#0B141A',
+                  border: `1px solid ${isActive ? 'rgba(110,231,183,0.25)' : '#1F2A33'}`,
+                  backgroundColor: isActive ? 'rgba(110,231,183,0.06)' : '#0B141A',
                 }}
               >
                 <img src={meta.logo} alt={meta.name} className="w-3.5 h-3.5 rounded-full flex-shrink-0" />
                 <span className="text-[11px] font-medium" style={{ color: meta.color }}>{meta.name}</span>
                 {isActive ? (
                   <span
-                    className="text-[9px] font-semibold px-1.5 py-0.5 rounded"
-                    style={{ color: '#5fd8ee', backgroundColor: 'rgba(80,210,193,0.12)' }}
+                    className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
+                    style={{ color: '#6EE7B7', backgroundColor: 'rgba(110,231,183,0.1)', border: '1px solid rgba(110,231,183,0.25)' }}
                   >
                     READY
                   </span>
                 ) : (
                   <button
                     onClick={() => openEnableModal(dex)}
-                    className="text-[10px] font-semibold px-1.5 py-0.5 rounded transition-colors hover:bg-[#1a2830]"
-                    style={{ color: '#FFA94D', border: '1px solid #FFA94D33', backgroundColor: 'rgba(255,169,77,0.06)' }}
+                    className="text-[10px] font-semibold px-2 py-0.5 rounded-full transition-colors"
+                    style={{ color: '#AB9FF2', border: '1px solid rgba(171,159,242,0.35)', backgroundColor: 'rgba(171,159,242,0.08)' }}
                   >
                     Enable
                   </button>
