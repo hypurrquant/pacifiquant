@@ -1,15 +1,21 @@
 'use client';
 
-/**
- * usePipelineState — minimal cross-DEX pipeline state machine persisted to
- * localStorage. A page reload mid-flow restores the step view so the user
- * can resume instead of having to re-enter source/target/amount.
- */
-
 import { useCallback, useEffect, useState } from 'react';
 import type { PerpDexId } from '@/domains/perp/types/perp.types';
+import { completesOnBridge } from '../utils/depositTargets';
 
 export type PipelineStep = 'withdraw' | 'bridge' | 'deposit' | 'done' | 'failed';
+
+type PipelineLeg = 'withdraw' | 'bridge' | 'deposit';
+
+// Single source of truth for step transitions. Both `advanceStep` (forward) and
+// `retryFailed` (recovery) consult this so HL/Lighter can't desync into a
+// phantom 'deposit' state that has no UI row after the restructure.
+function nextStepAfter(leg: PipelineLeg, target: PerpDexId): PipelineStep {
+  if (leg === 'withdraw') return 'bridge';
+  if (leg === 'bridge') return completesOnBridge(target) ? 'done' : 'deposit';
+  return 'done';
+}
 
 export interface PipelineState {
   readonly id: string;
@@ -70,13 +76,12 @@ export function usePipelineState() {
     return next;
   }, []);
 
-  const advanceStep = useCallback((leg: 'withdraw' | 'bridge' | 'deposit', hash: string) => {
+  const advanceStep = useCallback((leg: PipelineLeg, hash: string) => {
     setState((prev) => {
       if (!prev) return prev;
-      const nextStep: PipelineStep = leg === 'withdraw' ? 'bridge' : leg === 'bridge' ? 'deposit' : 'done';
       return {
         ...prev,
-        step: nextStep,
+        step: nextStepAfter(leg, prev.target),
         txHashes: { ...prev.txHashes, [leg]: hash },
         error: null,
       };
@@ -94,10 +99,15 @@ export function usePipelineState() {
   const retryFailed = useCallback(() => {
     setState((prev) => {
       if (!prev || prev.step !== 'failed') return prev;
-      const recover: PipelineStep = prev.txHashes.withdraw
-        ? prev.txHashes.bridge
-          ? 'deposit'
-          : 'bridge'
+      // Recovery mirrors advanceStep via nextStepAfter — if the most recent
+      // leg produced a hash, we resume at whatever comes after that leg.
+      const lastCompleted: PipelineLeg | null = prev.txHashes.bridge
+        ? 'bridge'
+        : prev.txHashes.withdraw
+          ? 'withdraw'
+          : null;
+      const recover: PipelineStep = lastCompleted
+        ? nextStepAfter(lastCompleted, prev.target)
         : 'withdraw';
       return { ...prev, step: recover, error: null };
     });

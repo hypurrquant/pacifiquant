@@ -196,6 +196,7 @@ export function PositionTable({ accountState, spotBalances, positions, openOrder
       {tpslTarget && (
         <TpSlModal
           position={tpslTarget}
+          markets={markets}
           onClose={() => setTpslTarget(null)}
         />
       )}
@@ -868,7 +869,8 @@ function OrderHistoryContent({ orderHistory, markets }: { orderHistory: PerpOrde
 // TpSlModal
 // ============================================================
 
-function TpSlModal({ position, onClose }: { position: PerpPosition; onClose: () => void }) {
+function TpSlModal({ position, markets, onClose }: { position: PerpPosition; markets: PerpMarket[]; onClose: () => void }) {
+  const market = markets.find((m) => m.symbol === position.symbol);
   const adapter = usePerpAdapter();
   const deps = usePerpDeps();
   const isAgentActive = useAgentActive();
@@ -983,10 +985,10 @@ function TpSlModal({ position, onClose }: { position: PerpPosition; onClose: () 
             Side: <span style={{ color: isLong ? '#5fd8ee' : '#ED7088' }}>{isLong ? 'Long' : 'Short'}</span>
           </span>
           <span>
-            Entry: <span className="text-white tabular-nums">{position.entryPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            Entry: <span className="text-white tabular-nums">{fmtPriceBySymbol(position.entryPrice, market)}</span>
           </span>
           <span>
-            Mark: <span className="text-white tabular-nums">{position.markPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            Mark: <span className="text-white tabular-nums">{fmtPriceBySymbol(position.markPrice, market)}</span>
           </span>
         </div>
 

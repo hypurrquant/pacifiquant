@@ -1,0 +1,585 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link "PacifiQuantbeta" [ref=e6] [cursor=pointer]:
+            - /url: /
+            - generic [ref=e7]:
+              - text: PacifiQuant
+              - superscript [ref=e8]: beta
+          - navigation [ref=e9]:
+            - link "Perp" [ref=e10] [cursor=pointer]:
+              - /url: /perp
+            - link "Strategies" [ref=e11] [cursor=pointer]:
+              - /url: /strategies
+        - button "Connect Wallet" [ref=e328] [cursor=pointer]:
+          - img [ref=e329]
+          - generic [ref=e331]: Connect Wallet
+  - main [ref=e12]:
+    - generic [ref=e14]:
+      - generic [ref=e15]:
+        - heading "Strategies" [level=1] [ref=e16]
+        - paragraph [ref=e17]: Pick a vault by risk tier. Your agent wallet executes across 4 DEXs.
+      - generic [ref=e18]:
+        - heading "Portfolio Overview" [level=2] [ref=e19]
+        - paragraph [ref=e20]: Connect wallet to view portfolio
+      - generic [ref=e21]:
+        - generic [ref=e22]:
+          - generic [ref=e23]: Agent Wallets
+          - generic [ref=e24]: 0/4 enabled
+        - generic [ref=e25]:
+          - generic [ref=e26]:
+            - img "Pacifica" [ref=e27]
+            - generic [ref=e28]: Pacifica
+            - button "Enable" [ref=e29] [cursor=pointer]
+          - generic [ref=e30]:
+            - img "Hyperliquid" [ref=e31]
+            - generic [ref=e32]: Hyperliquid
+            - button "Enable" [ref=e33] [cursor=pointer]
+          - generic [ref=e34]:
+            - img "Lighter" [ref=e35]
+            - generic [ref=e36]: Lighter
+            - button "Enable" [ref=e37] [cursor=pointer]
+          - generic [ref=e38]:
+            - img "Aster" [ref=e39]
+            - generic [ref=e40]: Aster
+            - button "Enable" [ref=e41] [cursor=pointer]
+      - generic [ref=e42]:
+        - generic [ref=e43]:
+          - generic [ref=e44]:
+            - heading "Strategy Posture" [level=2] [ref=e45]
+            - paragraph [ref=e46]: Aggregated across HL / Pacifica / Lighter / Aster perps + HL spot
+          - generic [ref=e47]: NO OPEN EXPOSURE
+        - paragraph [ref=e48]: Open a position to see your cross-DEX stance.
+        - paragraph [ref=e49]: Connect wallet to analyze posture.
+      - generic [ref=e50]:
+        - generic [ref=e51]:
+          - heading "Choose your strategy" [level=2] [ref=e52]
+          - generic [ref=e53]: APR estimates are live, from the same feeds the detail cards use
+        - generic [ref=e54]:
+          - generic [ref=e57]:
+            - generic [ref=e58]:
+              - generic [ref=e59]:
+                - generic [ref=e61]: ◈
+                - generic [ref=e62]
+              - generic [ref=e65]: LOW RISK
+            - generic [ref=e66]:
+              - generic [ref=e67]:
+                - generic [ref=e68]: —
+                - generic [ref=e69]: est. APR
+              - paragraph [ref=e70]: Top cross-DEX funding spread
+            - generic [ref=e71]:
+              - generic [ref=e72]:
+                - generic [ref=e73]: Top symbol
+                - generic [ref=e74]: —
+              - generic [ref=e75]:
+                - generic [ref=e76]: DEXs
+                - generic [ref=e77]: "4"
+              - generic [ref=e78]:
+                - generic [ref=e79]: Direction
+                - generic [ref=e80]: Neutral
+            - button "Enable Trading to Deploy" [ref=e81] [cursor=pointer]
+          - generic [ref=e84]:
+            - generic [ref=e85]:
+              - generic [ref=e86]:
+                - generic [ref=e88]: ⇄
+                - generic [ref=e89]
+              - generic [ref=e92]: MEDIUM
+            - generic [ref=e93]:
+              - generic [ref=e94]:
+                - generic [ref=e95]: —
+                - generic [ref=e96]: est. APR
+              - paragraph [ref=e97]: Median |funding| across liquid perps (APR)
+            - generic [ref=e98]:
+              - generic [ref=e99]:
+                - generic [ref=e100]: Universe
+                - generic [ref=e101]: 0 perps
+              - generic [ref=e102]:
+                - generic [ref=e103]: Leverage
+                - generic [ref=e104]: 1×
+              - generic [ref=e105]:
+                - generic [ref=e106]: Exposure
+                - generic [ref=e107]: Neutral
+            - button "Enable Trading to Deploy" [ref=e108] [cursor=pointer]
+          - generic [ref=e111]:
+            - generic [ref=e112]:
+              - generic [ref=e113]:
+                - generic [ref=e115]: ◇
+                - generic [ref=e116]
+              - generic [ref=e119]: HIGH
+            - generic [ref=e120]:
+              - generic [ref=e121]:
+                - generic [ref=e122]: Variable
+                - generic [ref=e123]: est. APR
+              - paragraph [ref=e124]: Earn spread; inventory risk depends on flow
+            - generic [ref=e125]:
+              - generic [ref=e126]:
+                - generic [ref=e127]: Model
+                - generic [ref=e128]: Dalen
+              - generic [ref=e129]:
+                - generic [ref=e130]: Inventory
+                - generic [ref=e131]: γ, κ, σ
+              - generic [ref=e132]:
+                - generic [ref=e133]: Mode
+                - generic [ref=e134]: Auto
+            - button "Enable Trading to Deploy" [ref=e135] [cursor=pointer]
+      - generic [ref=e136]:
+        - button "ARB Cross-DEX Funding Scanner Compare funding rates across HL, Pacifica, Lighter, Aster" [ref=e137] [cursor=pointer]:
+          - generic [ref=e138]:
+            - generic [ref=e139]: ARB
+            - generic [ref=e140]:
+              - heading "Cross-DEX Funding Scanner" [level=2] [ref=e141]
+              - paragraph [ref=e142]: Compare funding rates across HL, Pacifica, Lighter, Aster
+          - img [ref=e143]
+        - generic [ref=e146]:
+          - generic [ref=e147]:
+            - generic [ref=e332]: 17 opportunities ≥10% APR
+            - generic [ref=e149]:
+              - generic [ref=e333]: updated 27s ago
+              - generic [ref=e150]: Next funding 00:44:16
+          - generic [ref=e151]:
+            - generic [ref=e152]:
+              - generic [ref=e153]:
+                - generic [ref=e154]: Top Stable Spreads
+                - generic [ref=e155]: ranked by longest sustained ≥10% APR run
+              - generic [ref=e156]: window up to 2h · persisted
+            - generic [ref=e334]:
+              - generic [ref=e335]:
+                - generic [ref=e336]
+                - generic [ref=e339]
+                - img [ref=e342]
+                - generic [ref=e346]
+                - generic [ref=e359]
+                - button "Arb ZEC" [ref=e362] [cursor=pointer]
+              - generic [ref=e363]:
+                - generic [ref=e364]
+                - generic [ref=e367]
+                - img [ref=e370]
+                - generic [ref=e374]
+                - generic [ref=e387]
+                - button "Arb XMR" [ref=e390] [cursor=pointer]
+              - generic [ref=e391]:
+                - generic [ref=e392]
+                - generic [ref=e395]
+                - img [ref=e398]
+                - generic [ref=e402]
+                - generic [ref=e415]
+                - button "Arb TAO" [ref=e418] [cursor=pointer]
+          - generic [ref=e158]:
+            - generic [ref=e159]: Symbol
+            - generic [ref=e160]: Pacifica
+            - generic [ref=e161]: HL Rate
+            - generic [ref=e162]: Lighter
+            - generic [ref=e163]: Aster
+            - generic [ref=e164]: Spread (APR)
+            - generic [ref=e165]: Direction
+          - generic [ref=e167]:
+            - generic [ref=e419]:
+              - generic [ref=e420]: XMR-PERP
+              - generic [ref=e421]: 0.0015%
+              - generic [ref=e422]: 0.0013%
+              - generic [ref=e423]: 0.0536%
+              - generic [ref=e424]: 0.0030%
+              - generic [ref=e425]:
+                - generic [ref=e426]: +55.4%
+                - generic "Observed 1.8h · median 43.1% · 100% of samples ≥10% APR" [ref=e427]
+              - generic [ref=e431]: L Aster S Lighter
+              - button "Arb" [ref=e432] [cursor=pointer]
+            - generic [ref=e433]:
+              - generic [ref=e434]: WLD-PERP
+              - generic [ref=e435]: "-0.0028%"
+              - generic [ref=e436]: 0.0010%
+              - generic [ref=e437]: "-0.0288%"
+              - generic [ref=e438]: "-"
+              - generic [ref=e439]:
+                - generic [ref=e440]: +40.5%
+                - generic "Observed 1.6h · median 55.8% · 100% of samples ≥10% APR" [ref=e441]
+              - generic [ref=e445]: L Lighter S HL
+              - button "Arb" [ref=e446] [cursor=pointer]
+            - generic [ref=e447]:
+              - generic [ref=e448]: SOL-PERP
+              - generic [ref=e449]: "-0.0022%"
+              - generic [ref=e450]: 0.0013%
+              - generic [ref=e451]: 0.0096%
+              - generic [ref=e452]: 0.0100%
+              - generic [ref=e453]:
+                - generic [ref=e454]: +30.3%
+                - generic "Observed 1.8h · median 37.8% · 100% of samples ≥10% APR" [ref=e455]
+              - generic [ref=e459]: L Pacifica S Aster
+              - button "Arb" [ref=e460] [cursor=pointer]
+            - generic [ref=e461]:
+              - generic [ref=e462]: TAO-PERP
+              - generic [ref=e463]: 0.0011%
+              - generic [ref=e464]: "-0.0023%"
+              - generic [ref=e465]: "-0.0104%"
+              - generic [ref=e466]: 0.0013%
+              - generic [ref=e467]:
+                - generic [ref=e468]: +29.6%
+                - generic "Observed 1.8h · median 40.1% · 100% of samples ≥10% APR" [ref=e469]
+              - generic [ref=e473]: L HL S Pacifica
+              - button "Arb" [ref=e474] [cursor=pointer]
+            - generic [ref=e475]:
+              - generic [ref=e476]: MON-PERP
+              - generic [ref=e477]: "-0.0028%"
+              - generic [ref=e478]: "-0.0025%"
+              - generic [ref=e479]: 0.0040%
+              - generic [ref=e480]: 0.0013%
+              - generic [ref=e481]:
+                - generic [ref=e482]: +28.5%
+                - generic "Observed 1.8h · median 27.6% · 100% of samples ≥10% APR" [ref=e483]
+              - generic [ref=e487]: L Pacifica S Lighter
+              - button "Arb" [ref=e488] [cursor=pointer]
+            - generic [ref=e489]:
+              - generic [ref=e490]: kBONK-PERP
+              - generic [ref=e491]: "-0.0011%"
+              - generic [ref=e492]: 0.0013%
+              - generic [ref=e493]: "-"
+              - generic [ref=e494]: "-"
+              - generic [ref=e495]:
+                - generic [ref=e496]: +20.2%
+                - generic "Observed 1.8h · median 37.4% · 100% of samples ≥10% APR" [ref=e497]
+              - generic [ref=e501]: L Pacifica S HL
+              - button "Arb" [ref=e502] [cursor=pointer]
+            - generic [ref=e503]:
+              - generic [ref=e504]: HYPE-PERP
+              - generic [ref=e505]: "-0.0010%"
+              - generic [ref=e506]: 0.0013%
+              - generic [ref=e507]: 0.0096%
+              - generic [ref=e508]: 0.0050%
+              - generic [ref=e509]:
+                - generic [ref=e510]: +19.4%
+                - generic "Observed 1.8h · median 9.0% · 18% of samples ≥10% APR" [ref=e511]
+              - generic [ref=e515]: L Pacifica S HL
+              - button "Arb" [ref=e516] [cursor=pointer]
+            - generic [ref=e517]:
+              - generic [ref=e518]: PAXG-PERP
+              - generic [ref=e519]: 0.0015%
+              - generic [ref=e520]: 0.0013%
+              - generic [ref=e521]: 0.0096%
+              - generic [ref=e522]: "-0.0040%"
+              - generic [ref=e523]:
+                - generic [ref=e524]: +17.6%
+                - generic "Observed 1.8h · median 12.0% · 100% of samples ≥10% APR" [ref=e525]
+              - generic [ref=e529]: L Aster S Pacifica
+              - button "Arb" [ref=e530] [cursor=pointer]
+            - generic [ref=e531]:
+              - generic [ref=e532]: XRP-PERP
+              - generic [ref=e533]: 0.0015%
+              - generic [ref=e534]: 0.0013%
+              - generic [ref=e535]: "-0.0040%"
+              - generic [ref=e536]: 0.0100%
+              - generic [ref=e537]:
+                - generic [ref=e538]: +17.5%
+                - generic "Observed 1.8h · median 29.3% · 100% of samples ≥10% APR" [ref=e539]
+              - generic [ref=e543]: L Lighter S Pacifica
+              - button "Arb" [ref=e544] [cursor=pointer]
+            - generic [ref=e545]:
+              - generic [ref=e546]: CRCL-PERP
+              - generic [ref=e547]: 0.0015%
+              - generic [ref=e548]: "-0.0004%"
+              - generic [ref=e549]: 0.0032%
+              - generic [ref=e550]: 0.0000%
+              - generic [ref=e551]:
+                - generic [ref=e552]: +16.4%
+                - generic "Observed 1.8h · median 18.1% · 100% of samples ≥10% APR" [ref=e553]
+              - generic [ref=e557]: L HL S Pacifica
+              - button "Arb" [ref=e558] [cursor=pointer]
+            - generic [ref=e559]:
+              - generic [ref=e560]: ETH-PERP
+              - generic [ref=e561]: "-0.0006%"
+              - generic [ref=e562]: 0.0013%
+              - generic [ref=e563]: 0.0040%
+              - generic [ref=e564]: 0.0100%
+              - generic [ref=e565]:
+                - generic [ref=e566]: +16.2%
+                - generic "Observed 1.8h · median 17.1% · 100% of samples ≥10% APR" [ref=e567]
+              - generic [ref=e571]: L Pacifica S Aster
+              - button "Arb" [ref=e572] [cursor=pointer]
+            - generic [ref=e573]:
+              - generic [ref=e574]: CL-PERP
+              - generic [ref=e575]: 0.0015%
+              - generic [ref=e576]: 0.0006%
+              - generic [ref=e577]: "-"
+              - generic [ref=e578]: "-0.0018%"
+              - generic [ref=e579]:
+                - generic [ref=e580]: +15.1%
+                - generic "Observed 1.8h · median 11.6% · 100% of samples ≥10% APR" [ref=e581]
+              - generic [ref=e585]: L Aster S Pacifica
+              - button "Arb" [ref=e586] [cursor=pointer]
+            - generic [ref=e587]:
+              - generic [ref=e588]: EURUSD-PERP
+              - generic [ref=e589]: 0.0015%
+              - generic [ref=e590]: "-"
+              - generic [ref=e591]: 0.0000%
+              - generic [ref=e592]: "-"
+              - generic [ref=e593]:
+                - generic [ref=e594]: +13.1%
+                - generic "Observed 1.8h · median 13.1% · 100% of samples ≥10% APR" [ref=e595]
+              - generic [ref=e598]: L Lighter S Pacifica
+              - button "Arb" [ref=e599] [cursor=pointer]
+            - generic [ref=e600]:
+              - generic [ref=e601]: XAG-PERP
+              - generic [ref=e602]: 0.0015%
+              - generic [ref=e603]: "-"
+              - generic [ref=e604]: 0.0032%
+              - generic [ref=e605]: 0.0003%
+              - generic [ref=e606]:
+                - generic [ref=e607]: +12.8%
+                - generic "Observed 1.8h · median 13.1% · 100% of samples ≥10% APR" [ref=e608]
+              - generic [ref=e612]: L Aster S Pacifica
+              - button "Arb" [ref=e613] [cursor=pointer]
+            - generic [ref=e614]:
+              - generic [ref=e615]: BTC-PERP
+              - generic [ref=e616]: "-0.0006%"
+              - generic [ref=e617]: "-0.0020%"
+              - generic [ref=e618]: "-0.0104%"
+              - generic [ref=e619]: "-0.0148%"
+              - generic [ref=e620]:
+                - generic [ref=e621]: +12.4%
+                - generic "Observed 1.8h · median 26.4% · 98% of samples ≥10% APR" [ref=e622]
+              - generic [ref=e626]: L HL S Pacifica
+              - button "Arb" [ref=e627] [cursor=pointer]
+            - generic [ref=e628]:
+              - generic [ref=e629]: ZEC-PERP
+              - generic [ref=e630]: "-0.0001%"
+              - generic [ref=e631]: 0.0013%
+              - generic [ref=e632]: 0.0072%
+              - generic [ref=e633]: 0.0013%
+              - generic [ref=e634]:
+                - generic [ref=e635]: +12.2%
+                - generic "Observed 1.8h · median 53.1% · 100% of samples ≥10% APR" [ref=e636]
+              - generic [ref=e640]: L Pacifica S HL
+              - button "Arb" [ref=e641] [cursor=pointer]
+            - generic [ref=e642]:
+              - generic [ref=e643]: SP500-PERP
+              - generic [ref=e644]: 0.0015%
+              - generic [ref=e645]: 0.0003%
+              - generic [ref=e646]: "-"
+              - generic [ref=e647]: "-"
+              - generic [ref=e648]:
+                - generic [ref=e649]: +10.8%
+                - generic "Observed 1.8h · median 10.6% · 72% of samples ≥10% APR" [ref=e650]
+              - generic [ref=e654]: L HL S Pacifica
+              - button "Arb" [ref=e655] [cursor=pointer]
+            - generic [ref=e656]:
+              - generic [ref=e657]: XAU-PERP
+              - generic [ref=e658]: 0.0015%
+              - generic [ref=e659]: "-"
+              - generic [ref=e660]: 0.0032%
+              - generic [ref=e661]: 0.0058%
+              - generic [ref=e662]:
+                - generic [ref=e663]: +9.6%
+                - generic "Observed 1.8h · median 13.1% · 83% of samples ≥10% APR" [ref=e664]
+              - generic [ref=e668]: L Lighter S Pacifica
+            - generic [ref=e669]:
+              - generic [ref=e670]: PUMP-PERP
+              - generic [ref=e671]: 0.0015%
+              - generic [ref=e672]: 0.0013%
+              - generic [ref=e673]: 0.0096%
+              - generic [ref=e674]: 0.0050%
+              - generic [ref=e675]:
+                - generic [ref=e676]: +7.7%
+                - generic "Observed 1.8h · median 7.7% · 0% of samples ≥10% APR" [ref=e677]
+              - generic [ref=e680]: L Aster S Pacifica
+            - generic [ref=e681]:
+              - generic [ref=e682]: FARTCOIN-PERP
+              - generic [ref=e683]: 0.0015%
+              - generic [ref=e684]: 0.0013%
+              - generic [ref=e685]: 0.0096%
+              - generic [ref=e686]: 0.0050%
+              - generic [ref=e687]:
+                - generic [ref=e688]: +7.7%
+                - generic "Observed 1.8h · median 7.7% · 0% of samples ≥10% APR" [ref=e689]
+              - generic [ref=e692]: L Aster S Pacifica
+      - button "INSIGHTS Market Insights Funding trends, cross-DEX intel, news" [ref=e170] [cursor=pointer]:
+        - generic [ref=e171]:
+          - generic [ref=e172]: INSIGHTS
+          - generic [ref=e173]:
+            - heading "Market Insights" [level=2] [ref=e174]
+            - paragraph [ref=e175]: Funding trends, cross-DEX intel, news
+        - img [ref=e176]
+      - generic [ref=e178]:
+        - generic [ref=e179]:
+          - generic [ref=e180]:
+            - generic [ref=e181]:
+              - generic [ref=e182]: DN
+              - heading "Delta Neutral" [level=2] [ref=e183]
+            - paragraph [ref=e184]: Long spot on Hyperliquid, short perp on Pacifica to collect Pacifica funding.
+          - generic [ref=e185]: Agent Wallet Required — Enable Trading for Hyperliquid and Pacifica in the Perp page
+          - generic [ref=e186]:
+            - generic [ref=e187]:
+              - generic [ref=e188]: Venue Split
+              - generic [ref=e189]:
+                - generic [ref=e190]: Spot · Hyperliquid
+                - generic [ref=e191]: Perp · Pacifica
+            - generic [ref=e192]:
+              - generic [ref=e193]: Asset
+              - combobox [ref=e693]:
+                - option "HYPE" [selected]
+            - generic [ref=e195]:
+              - generic [ref=e196]: Notional (USDC)
+              - generic [ref=e197]:
+                - spinbutton [ref=e198]: "1000"
+                - generic [ref=e200]
+            - generic [ref=e203]:
+              - generic [ref=e204]:
+                - generic [ref=e205]: Spot Leg
+                - generic [ref=e206]: HYPE/USDC · $40.95
+              - generic [ref=e207]:
+                - generic [ref=e208]: Perp Leg
+                - generic [ref=e209]: HYPE-PERP · $40.92
+              - generic [ref=e210]:
+                - generic [ref=e211]: Pacifica Funding (daily)
+                - generic [ref=e212]: "-0.0230%"
+              - generic [ref=e213]:
+                - generic [ref=e214]: Pacifica Funding (APR)
+                - generic [ref=e215]: "-8.40%"
+              - generic [ref=e216]:
+                - generic [ref=e217]
+                - generic [ref=e220]
+            - button "Open Delta-Neutral" [ref=e223] [cursor=pointer]
+          - generic [ref=e224]:
+            - generic [ref=e225]: Structure
+            - generic [ref=e226]: Buy the spot asset on Hyperliquid, then hedge the same asset with a Pacifica short perp.
+        - generic [ref=e227]:
+          - generic [ref=e228]:
+            - generic [ref=e229]:
+              - generic [ref=e230]: MM
+              - heading "Market Making" [level=2] [ref=e231]
+            - paragraph [ref=e232]: Dalen-model quotes — inventory-aware bid/ask around mid
+          - generic [ref=e233]:
+            - generic [ref=e234]: Agent wallet not active for hyperliquid. Enable trading in the Trade panel first.
+            - generic [ref=e235]:
+              - generic [ref=e236]: DEX
+              - combobox [ref=e237]:
+                - option "Hyperliquid" [selected]
+                - option "Pacifica"
+                - option "Lighter"
+                - option "Aster"
+            - generic [ref=e238]:
+              - generic [ref=e239]: Symbol
+              - combobox [ref=e240]:
+                - option "BTC-USDC" [selected]
+                - option "ETH-USDC"
+                - option "ATOM-USDC"
+                - option "MATIC-USDC"
+                - option "DYDX-USDC"
+                - option "SOL-USDC"
+                - option "AVAX-USDC"
+                - option "BNB-USDC"
+                - option "APE-USDC"
+                - option "OP-USDC"
+                - option "LTC-USDC"
+                - option "ARB-USDC"
+                - option "DOGE-USDC"
+                - option "INJ-USDC"
+                - option "SUI-USDC"
+                - option "kPEPE-USDC"
+                - option "CRV-USDC"
+                - option "LDO-USDC"
+                - option "LINK-USDC"
+                - option "STX-USDC"
+                - option "RNDR-USDC"
+                - option "CFX-USDC"
+                - option "FTM-USDC"
+                - option "GMX-USDC"
+                - option "SNX-USDC"
+                - option "XRP-USDC"
+                - option "BCH-USDC"
+                - option "APT-USDC"
+                - option "AAVE-USDC"
+                - option "COMP-USDC"
+            - generic [ref=e241]:
+              - generic [ref=e242]:
+                - generic [ref=e243]: Inventory
+                - spinbutton [ref=e244]: "0"
+              - generic [ref=e245]:
+                - generic [ref=e246]: Gamma (γ)
+                - spinbutton [ref=e247]: "0.3"
+            - generic [ref=e248]:
+              - generic [ref=e249]:
+                - generic [ref=e250]: Kappa (κ)
+                - spinbutton [ref=e251]: "2"
+              - generic [ref=e252]:
+                - generic [ref=e253]: Sigma B (σ)
+                - spinbutton [ref=e254]: "3"
+            - generic [ref=e255]:
+              - generic [ref=e256]: Quote Preview
+              - generic [ref=e694]:
+                - generic [ref=e695]: "Bid:"
+                - generic [ref=e696]: $78,933
+              - generic [ref=e697]:
+                - generic [ref=e698]: "Ask:"
+                - generic [ref=e699]: $78,937
+              - generic [ref=e700]:
+                - generic [ref=e701]: "Reservation:"
+                - generic [ref=e702]: $78,935
+              - generic [ref=e703]:
+                - generic [ref=e704]: "Half-Spread:"
+                - generic [ref=e705]: $2
+            - generic [ref=e258] [cursor=pointer]:
+              - checkbox "Auto-trade with agent wallet" [disabled] [ref=e260]
+              - generic "Enable agent trading for hyperliquid first" [ref=e263]: Auto-trade with agent wallet
+            - button "Start MM" [disabled] [ref=e264]
+          - generic [ref=e265]:
+            - generic [ref=e266]: Active Strategies
+            - generic [ref=e267]: No active MM strategies
+      - generic [ref=e268]:
+        - generic [ref=e269]:
+          - generic [ref=e270]:
+            - generic [ref=e271]:
+              - generic [ref=e272]:
+                - generic [ref=e273]: RB
+                - heading "Cross-DEX Rebalance" [level=2] [ref=e274]
+              - button "Refresh" [ref=e275] [cursor=pointer]
+            - paragraph [ref=e276]: Equalize USDC across exchanges for optimal capital efficiency
+          - generic [ref=e706]: No exchange data available. Connect wallets to view balances.
+        - generic [ref=e278]:
+          - generic [ref=e279]:
+            - generic [ref=e280]:
+              - generic [ref=e281]: BOT
+              - heading "Bot Strategies" [level=2] [ref=e282]
+            - paragraph [ref=e283]: Automated Grid, DCA, and TWAP execution plans
+          - generic [ref=e284]:
+            - button "Grid" [ref=e285] [cursor=pointer]
+            - button "DCA" [ref=e286] [cursor=pointer]
+            - button "TWAP" [ref=e287] [cursor=pointer]
+          - generic [ref=e288]:
+            - generic [ref=e289]: Exchange
+            - button "HL" [ref=e290] [cursor=pointer]
+            - button "PAC" [ref=e291] [cursor=pointer]
+            - button "LT" [ref=e292] [cursor=pointer]
+            - button "AST" [ref=e293] [cursor=pointer]
+          - generic [ref=e294]:
+            - generic [ref=e295]:
+              - generic [ref=e296]:
+                - generic [ref=e297]: Market
+                - combobox [ref=e298]
+              - generic [ref=e299]:
+                - generic [ref=e300]: Side
+                - combobox [ref=e301]
+            - generic [ref=e302]:
+              - generic [ref=e303]:
+                - generic [ref=e304]: Upper Price
+                - spinbutton [ref=e305]
+              - generic [ref=e306]:
+                - generic [ref=e307]: Lower Price
+                - spinbutton [ref=e308]
+            - generic [ref=e309]:
+              - generic [ref=e310]:
+                - generic [ref=e311]: Grid Count
+                - spinbutton [ref=e312]: "10"
+              - generic [ref=e313]:
+                - generic [ref=e314]: Total Size (USDC)
+                - spinbutton [ref=e315]: "1000"
+            - button "Preview Plan" [ref=e316] [cursor=pointer]
+  - contentinfo [ref=e317]:
+    - generic [ref=e319]:
+      - generic [ref=e320]:
+        - generic [ref=e321]: PacifiQuant
+        - generic [ref=e322]: "|"
+        - generic [ref=e323]: Pacifica-first Perp Hub
+      - generic [ref=e325]: © 2026 PacifiQuant
+  - generic "Notifications"
+  - alert [ref=e326]

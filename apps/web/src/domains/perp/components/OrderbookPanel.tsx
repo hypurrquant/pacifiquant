@@ -12,8 +12,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useOrderbook } from '../hooks/usePerpData';
-import { fmtSizeByLot } from '../utils/displayComputations';
-import type { Orderbook } from '../types/perp.types';
+import { fmtSizeByLot, priceDecimals as priceDecimalsFromTick } from '../utils/displayComputations';
 
 const ROW_HEIGHT = 23; // px per row — matches HL density
 const ROWS_PER_SIDE = 11; // HL shows exactly 11 rows each side
@@ -21,35 +20,14 @@ const ROWS_PER_SIDE = 11; // HL shows exactly 11 rows each side
 interface Props {
   symbol: string;
   baseToken: string;
+  /** Market tickSize — canonical price-step from the adapter. Drives the
+   *  price column's decimals AND the nSigFigs aggregation buttons, so the
+   *  orderbook always matches the chart / mark-price header. */
+  tickSize?: number;
   /** Market lotSize — controls the size column's decimal padding (BTC 5dp,
    *  HYPE 2dp, PURR 0dp, etc.). Omit/undefined for a fallback of 4dp. */
   lotSize?: number;
   onPriceClick: (price: number) => void;
-}
-
-/**
- * 오더북 실제 호가 간격을 감지해서 가장 세밀한 tick을 반환.
- * HL은 토큰마다 tick이 다름 (BTC: $1, HYPE: $0.001, PEPE: 0.0000001 등)
- */
-function detectTickFromOrderbook(orderbook: Orderbook): number {
-  const levels = [...orderbook.asks, ...orderbook.bids].slice(0, 10);
-  if (levels.length < 2) return 1;
-
-  // 연속한 price 차이의 최솟값이 실제 tick
-  const sorted = levels.map(l => l.price).sort((a, b) => a - b);
-  let minDiff = Infinity;
-  for (let i = 1; i < sorted.length; i++) {
-    const diff = sorted[i] - sorted[i - 1];
-    if (diff > 0 && diff < minDiff) minDiff = diff;
-  }
-  if (minDiff === Infinity || minDiff <= 0) return 1;
-
-  // 표준 tick 중 가장 가까운 값으로 스냅
-  const tickOptions = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10];
-  for (const t of tickOptions) {
-    if (minDiff <= t * 1.5) return t;
-  }
-  return 100;
 }
 
 /**
@@ -64,27 +42,22 @@ function computeNSigFigs(price: number, targetTick: number): number | undefined 
   return Math.max(2, Math.min(5, n));
 }
 
-export function OrderbookPanel({ symbol, baseToken, lotSize, onPriceClick }: Props) {
+export function OrderbookPanel({ symbol, baseToken, tickSize, lotSize, onPriceClick }: Props) {
   const [nSigFigs, setNSigFigs] = useState<number | undefined>(undefined);
-  const [naturalTick, setNaturalTick] = useState<number>(1);
 
   const { data: orderbook } = useOrderbook(symbol, nSigFigs);
 
-  // Reset nSigFigs when symbol changes
+  // Reset nSigFigs when symbol changes so a new market starts at its
+  // canonical precision rather than inheriting the previous symbol's tick.
   useEffect(() => {
     setNSigFigs(undefined);
   }, [symbol]);
 
-  // Update naturalTick from default orderbook (when not using nSigFigs)
-  useEffect(() => {
-    if (nSigFigs === undefined && orderbook) {
-      setNaturalTick(detectTickFromOrderbook(orderbook));
-    }
-  }, [orderbook, nSigFigs]);
+  // naturalTick comes from the adapter's market metadata — same source the
+  // TradingChart OHLC header uses — so the price column, the tick buttons,
+  // and the chart stay aligned across every asset on every DEX.
+  const naturalTick = tickSize && tickSize > 0 ? tickSize : 0.01;
 
-  // HL shows fixed 11 rows per side — no dynamic sizing needed
-
-  // Tick button targets: naturalTick, *10, *100, *1000
   const tickTargets = useMemo(() => [
     naturalTick,
     naturalTick * 10,
@@ -92,15 +65,7 @@ export function OrderbookPanel({ symbol, baseToken, lotSize, onPriceClick }: Pro
     naturalTick * 1000,
   ], [naturalTick]);
 
-  // Current tick for priceDecimals: detect from current orderbook response
-  const currentTick = useMemo(() => {
-    if (!orderbook) return naturalTick;
-    return detectTickFromOrderbook(orderbook);
-  }, [orderbook, naturalTick]);
-
-  const priceDecimals = currentTick >= 1
-    ? 0
-    : Math.max(0, Math.min(8, Math.ceil(-Math.log10(currentTick))));
+  const priceDecimals = priceDecimalsFromTick(naturalTick);
 
   const { asks, bids, maxCumSize } = useMemo(() => {
     if (!orderbook) return { asks: [], bids: [], maxCumSize: 1 };
@@ -223,7 +188,7 @@ export function OrderbookPanel({ symbol, baseToken, lotSize, onPriceClick }: Pro
         {spread !== null && spreadPct !== null ? (
           <>
             <span className="text-xs text-right tabular-nums text-gray-300">
-              {spread.toFixed(currentTick < 0.01 ? 5 : currentTick < 1 ? 3 : 2)}
+              {spread.toFixed(naturalTick < 0.01 ? 5 : naturalTick < 1 ? 3 : 2)}
             </span>
             <span className="text-xs text-right tabular-nums text-gray-300">
               {spreadPct.toFixed(3)}%

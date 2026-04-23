@@ -14,6 +14,10 @@ type Tab = 'orderbook' | 'trades';
 interface Props {
   trades: Trade[];
   symbol: string; // e.g. "BTC-PERP"
+  /** Market tickSize — threaded through to OrderbookPanel + RecentTrades so
+   *  the price column stays aligned with the TradingChart OHLC header for
+   *  every asset on every DEX. */
+  tickSize?: number;
   /** Market lotSize — threaded through to OrderbookPanel + RecentTrades
    *  so the size column uses per-asset decimal granularity instead of a
    *  hardcoded .toFixed(4). */
@@ -21,7 +25,7 @@ interface Props {
   onPriceClick: (price: number) => void;
 }
 
-export function OrderbookTradesPanel({ trades, symbol, lotSize, onPriceClick }: Props) {
+export function OrderbookTradesPanel({ trades, symbol, tickSize, lotSize, onPriceClick }: Props) {
   const [tab, setTab] = useState<Tab>('orderbook');
 
   // "BTC-PERP" → "BTC"
@@ -54,11 +58,11 @@ export function OrderbookTradesPanel({ trades, symbol, lotSize, onPriceClick }: 
       {/* Content */}
       <div className="flex-1 min-h-0 overflow-hidden">
         {tab === 'orderbook' && (
-          <OrderbookPanel symbol={symbol} baseToken={baseToken} lotSize={lotSize} onPriceClick={onPriceClick} />
+          <OrderbookPanel symbol={symbol} baseToken={baseToken} tickSize={tickSize} lotSize={lotSize} onPriceClick={onPriceClick} />
         )}
         {tab === 'trades' && (
           <div className="h-full overflow-y-auto">
-            <RecentTrades trades={trades} baseToken={baseToken} lotSize={lotSize} />
+            <RecentTrades trades={trades} baseToken={baseToken} tickSize={tickSize} lotSize={lotSize} />
           </div>
         )}
       </div>

@@ -60,3 +60,4 @@ apps/mobile/android/app/build/
 apps/mobile/ios/build/
 apps/mobile/ios/Pods/
 apps/mobile/rust/wallet-engine/target/
+*.png

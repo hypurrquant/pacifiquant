@@ -16,6 +16,7 @@ import { QueryProvider } from "./QueryProvider";
 import { RpcProvider } from "./RpcProvider";
 import { ErrorHandlerInit } from "./ErrorHandlerInit";
 import { QueryStoreSync } from "./QueryStoreSync";
+import { AgentWalletAutoReset } from "./AgentWalletAutoReset";
 
 // v1.28.7: core env DI — 앱 부트스트랩
 initChainConfig({
@@ -36,6 +37,7 @@ export default function Providers({ children }: PropsWithChildren) {
             <ErrorHandlerInit>
                 <QueryStoreSync>
                     <PrivyClientProvider>
+                        <AgentWalletAutoReset />
                         {children}
                     </PrivyClientProvider>
                 </QueryStoreSync>

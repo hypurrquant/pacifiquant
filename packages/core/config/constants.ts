@@ -18,7 +18,10 @@ export const CHAIN_RPC_ENDPOINTS: Record<number, string[]> = {
   8453: ['https://base.drpc.org', 'https://base-rpc.publicnode.com'],
   1: ['https://eth.drpc.org', 'https://ethereum-rpc.publicnode.com'],
   56: ['https://bsc.drpc.org', 'https://bsc-rpc.publicnode.com'],
-  42161: ['https://arbitrum.drpc.org', 'https://arbitrum-one-rpc.publicnode.com'],
+  // drpc.org has been returning 500 on Arbitrum intermittently — publicnode
+  // first, 1rpc.io as a third fallback so the round-robin has somewhere
+  // to go when the primary and backup both stall simultaneously.
+  42161: ['https://arbitrum-one-rpc.publicnode.com', 'https://1rpc.io/arb', 'https://arbitrum.drpc.org'],
   43114: ['https://avalanche.drpc.org', 'https://avalanche-c-chain-rpc.publicnode.com'],
   10: ['https://optimism.drpc.org', 'https://optimism-rpc.publicnode.com'],
   137: ['https://polygon.drpc.org', 'https://polygon-bor-rpc.publicnode.com'],

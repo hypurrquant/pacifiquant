@@ -246,6 +246,7 @@ export function AccountInfoPanel({ accountState, positions, spotBalances, market
             <BridgeCard
               walletAddress={walletAddress}
               defaultDirection={bridgeDirection}
+              defaultDex={selectedDex}
               onClose={() => setBridgeDirection(null)}
               onComplete={() => setBridgeDirection(null)}
               onSendTransaction={onSendTransaction}

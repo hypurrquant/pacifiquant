@@ -10,7 +10,7 @@ import { createChart, type IChartApi, type ISeriesApi, type UTCTimestamp, Candle
 import type { Candle, CandleInterval } from '../types/perp.types';
 import { toUtcTimestamp } from '../lib/toUtcTimestamp';
 import { usePerpStore } from '../stores/usePerpStore';
-import { fmtPriceByTick } from '../utils/displayComputations';
+import { fmtPriceByTick, priceDecimals } from '../utils/displayComputations';
 
 const INTERVALS: { value: CandleInterval; label: string }[] = [
   { value: '1m', label: '1m' },
@@ -172,6 +172,22 @@ export function TradingChart({ candles, symbol, tickSize, isLoading, onLoadMoreH
       volumeSeriesRef.current = null;
     };
   }, []);
+
+  // Propagate market.tickSize into lightweight-charts' own price formatter.
+  // Without this, the chart's Y-axis labels + last-price badge + crosshair
+  // values default to 2dp (minMove 0.01) and silently drop precision on
+  // low-priced assets (MON ~0.03, PEPE ~0.0000001, etc.).
+  useEffect(() => {
+    if (!candleSeriesRef.current) return;
+    const tick = tickSize && tickSize > 0 ? tickSize : 0.01;
+    candleSeriesRef.current.applyOptions({
+      priceFormat: {
+        type: 'price',
+        precision: priceDecimals(tick),
+        minMove: tick,
+      },
+    });
+  }, [tickSize]);
 
   // Data update + fit-on-series-change.
   // fitContent must fire once per series (symbol+interval), regardless

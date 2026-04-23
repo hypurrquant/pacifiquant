@@ -509,7 +509,7 @@ export function TradingLayout({ walletAddress }: Props) {
 
       {/* Row 2 Col 2: Orderbook / Trades (same height as chart) */}
       <div className="min-h-0 overflow-hidden" style={{ borderLeft: '1px solid #273035' }}>
-        <OrderbookTradesPanel trades={trades} symbol={store.selectedSymbol} lotSize={selectedMarket?.lotSize} onPriceClick={handlePriceClick} />
+        <OrderbookTradesPanel trades={trades} symbol={store.selectedSymbol} tickSize={selectedMarket?.tickSize} lotSize={selectedMarket?.lotSize} onPriceClick={handlePriceClick} />
       </div>
 
       {/* Row 2-3 Col 3: Order Form + Account Info (full height, HL style) */}

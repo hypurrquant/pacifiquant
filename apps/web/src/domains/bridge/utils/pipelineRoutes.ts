@@ -1,9 +1,3 @@
-/**
- * pipelineRoutes — registry of the 6 bidirectional DEX pairs. Chain IDs are
- * hardcoded because Relay's API accepts raw numeric IDs (Solana uses a magic
- * id rather than a real chain id).
- */
-
 import type { PerpDexId } from '@/domains/perp/types/perp.types';
 
 export type BridgeKind = 'evm-evm' | 'evm-svm';

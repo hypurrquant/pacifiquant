@@ -14,6 +14,7 @@ import type { PerpMarket } from '../types/perp.types';
 import { usePerpStore } from '../stores/usePerpStore';
 import { useFavoritesStore } from '../stores/useFavoritesStore';
 import { usePerpDexs, useMarkets } from '../hooks/usePerpData';
+import { fmtPriceByTick } from '../utils/displayComputations';
 import { toHourlyRate, annualizeRate } from '@hq/core/defi/perp';
 
 interface Props {
@@ -171,7 +172,7 @@ export function MarketSelector({ markets, selectedMarket, section = 'all' }: Pro
               >
                 <span className="font-medium">{m.baseAsset}-{m.quoteAsset}</span>
                 <span className={`tabular-nums ${change >= 0 ? 'text-[#5fd8ee]' : 'text-[#ED7088]'}`}>
-                  {fmtPrice(m.markPrice)}
+                  {fmtPriceByTick(m.markPrice, m.tickSize)}
                 </span>
                 <span className={`tabular-nums text-xs ${change >= 0 ? 'text-[#5fd8ee]' : 'text-[#ED7088]'}`}>
                   {change >= 0 ? '+' : ''}{change.toFixed(2)}%
@@ -212,7 +213,7 @@ export function MarketSelector({ markets, selectedMarket, section = 'all' }: Pro
           </>
         ) : selectedMarket ? (
           <>
-            <StatPair label="Mark" sublabel="Oracle" value={fmtPrice(selectedMarket.markPrice)} subvalue={fmtPrice(selectedMarket.indexPrice)} />
+            <StatPair label="Mark" sublabel="Oracle" value={fmtPriceByTick(selectedMarket.markPrice, selectedMarket.tickSize)} subvalue={fmtPriceByTick(selectedMarket.indexPrice, selectedMarket.tickSize)} />
             <Stat
               label="24h Change"
               value={`${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)} / ${priceChangePct >= 0 ? '+' : ''}${priceChangePct.toFixed(2)}%`}
@@ -398,7 +399,7 @@ export function MarketSelector({ markets, selectedMarket, section = 'all' }: Pro
                       )}
                     </button>
                     <span className="text-right text-white tabular-nums">
-                      {fmtPrice(m.markPrice)}
+                      {fmtPriceByTick(m.markPrice, m.tickSize)}
                     </span>
                     <span className={`text-right tabular-nums ${changeColor}`}>
                       {isPositive ? '+' : ''}{changePct.toFixed(2)}%
@@ -489,12 +490,6 @@ function StatPair({ label, sublabel, value, subvalue }: { label: string; sublabe
       </div>
     </div>
   );
-}
-
-function fmtPrice(n: number): string {
-  // HL-style price decimals based on magnitude (min + max digits to pad trailing zeros)
-  const decimals = n >= 10000 ? 2 : n >= 100 ? 2 : n >= 10 ? 3 : n >= 1 ? 4 : n >= 0.1 ? 5 : 6;
-  return n.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
 
 function fmtLarge(n: number): string {

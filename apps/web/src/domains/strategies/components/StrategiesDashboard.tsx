@@ -25,6 +25,8 @@ import { VaultPicker, type StrategyVaultId } from './VaultPicker';
 import { CollapsibleSection } from './CollapsibleSection';
 import { AgentStatusStrip } from './AgentStatusStrip';
 import { StrategyPostureCard } from './StrategyPostureCard';
+import { MarketContextStrip } from './MarketContextStrip';
+import { FearGreedGauge } from './FearGreedGauge';
 import { useCrossDexIntel } from '../hooks/useCrossDexIntel';
 import { useStrategyExchangeAccounts } from '../hooks/useStrategyExchangeAccounts';
 
@@ -64,6 +66,17 @@ export function StrategiesDashboard() {
             Pick a vault by risk tier. Your agent wallet executes across 4 DEXs.
           </p>
         </div>
+
+        {/* 0 — Market context (F&G / next macro event / composite stress).
+             Sits above the portfolio because it shapes whether the user wants
+             to size up, unwind, or wait — not an afterthought at the bottom. */}
+        <MarketContextStrip />
+
+        {/* 0b — Richer Fear & Greed gauge with weekly/monthly/yearly deltas,
+             placed as a dedicated card because a single-number chip doesn't
+             convey momentum (today "Greed" after a week of "Extreme Fear"
+             is a different stance than steady greed). */}
+        <FearGreedGauge />
 
         {/* 1 — Portfolio (donut + sparklines) */}
         <PortfolioOverview walletAddress={walletAddress} />

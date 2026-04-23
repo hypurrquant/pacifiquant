@@ -9,18 +9,22 @@
  * - 사이즈 컬러: buy=green, sell=red (HL은 가격만 컬러)
  */
 
-import { fmtSizeByLot } from '../utils/displayComputations';
+import { fmtSizeByLot, fmtPriceByTick } from '../utils/displayComputations';
 import type { Trade } from '../types/perp.types';
 
 interface Props {
   trades: Trade[];
   baseToken: string;
+  /** Market tickSize — price column matches the chart / orderbook. Without
+   *  this the price falls back to 2dp which is wrong for low-priced assets
+   *  (PEPE, BONK) or coarse-ticked majors (BTC @ $1 tick). */
+  tickSize?: number;
   /** Market lotSize — size column uses `-log10(lotSize)` decimals instead
    *  of a hardcoded 4dp (wrong for HYPE 2dp, PURR 0dp, BTC 5dp, etc.). */
   lotSize?: number;
 }
 
-export function RecentTrades({ trades, baseToken, lotSize }: Props) {
+export function RecentTrades({ trades, baseToken, tickSize, lotSize }: Props) {
   return (
     <div className="flex flex-col overflow-hidden h-full">
       {/* Header */}
@@ -38,7 +42,7 @@ export function RecentTrades({ trades, baseToken, lotSize }: Props) {
             className="grid grid-cols-3 px-3 py-[1px] text-xs hover:bg-[#1a2830] transition-colors"
           >
             <span className={`tabular-nums ${trade.side === 'long' ? 'text-[#5fd8ee]' : 'text-[#ED7088]'}`}>
-              {trade.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              {tickSize ? fmtPriceByTick(trade.price, tickSize) : trade.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </span>
             <span className="text-right text-gray-300 tabular-nums">
               {lotSize ? fmtSizeByLot(trade.size, lotSize) : trade.size.toFixed(4)}

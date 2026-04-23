@@ -1,13 +1,8 @@
 'use client';
 
-/**
- * PipelineTab — cross-DEX Withdraw → Bridge → Deposit wizard mounted inside
- * the existing Deposit modal. The user picks a source + target DEX + amount,
- * then steps through three legs. State persists to localStorage so a closed
- * tab or reload can resume at the stuck step.
- */
-
 import { useMemo, useState } from 'react';
+import { parseUnits } from 'viem';
+import { Connection, PublicKey, Transaction } from '@solana/web3.js';
 import { getAdapterByDex } from '@/domains/perp/hooks/usePerpAdapter';
 import type { PerpDexId } from '@/domains/perp/types/perp.types';
 import { PERP_DEX_META, PERP_DEX_ORDER } from '@/shared/config/perp-dex-display';
@@ -15,17 +10,29 @@ import { useStrategyExchangeAccounts } from '@/domains/strategies/hooks/useStrat
 import { usePerpDeps } from '@/domains/perp/providers/PerpDepsProvider';
 import { usePipelineState, type PipelineState } from '../hooks/usePipelineState';
 import { findRoute, type PipelineRoute } from '../utils/pipelineRoutes';
+import { DEPOSIT_TARGETS, completesOnBridge } from '../utils/depositTargets';
+import { buildDepositInstruction, getNetworkConfig } from '../utils/pacifica-deposit';
+import { getPhantomProvider } from '../utils/phantom';
 
 const RELAY_API_URL = 'https://api.relay.link';
 const USDC_ADDRESSES: Record<number, string> = {
-  42161: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831', // Arbitrum USDC
-  56:    '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d', // BSC USDC (BEP20)
-  // Relay maps Solana USDC by its canonical SPL mint address when the chain
-  // is the Solana magic id (792703809).
+  42161: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
+  56: '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d',
+  // Solana USDC SPL mint — Relay keys Solana by its magic chain id (792703809).
   792703809: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
 };
 
-export function PipelineTab({ onClose }: { onClose: () => void }) {
+interface PipelineTabProps {
+  readonly onClose: () => void;
+  /** When the parent (BridgeCard) already knows the source/target/amount,
+   *  skip the built-in picker and pre-fill those values so the pipeline
+   *  opens at the same choices as the surrounding form. */
+  readonly initialSource?: PerpDexId;
+  readonly initialTarget?: PerpDexId;
+  readonly initialAmount?: string;
+}
+
+export function PipelineTab({ onClose, initialSource, initialTarget, initialAmount }: PipelineTabProps) {
   const { state, start, advanceStep, failStep, reset, retryFailed } = usePipelineState();
 
   if (state && state.step !== 'done') {
@@ -34,20 +41,39 @@ export function PipelineTab({ onClose }: { onClose: () => void }) {
   if (state && state.step === 'done') {
     return <PipelineDoneView state={state} onReset={reset} onClose={onClose} />;
   }
-  return <PipelinePicker onStart={start} />;
+  return (
+    <PipelinePicker
+      onStart={start}
+      initialSource={initialSource}
+      initialTarget={initialTarget}
+      initialAmount={initialAmount}
+    />
+  );
 }
 
-// ── Picker ─────────────────────────────────────────────────────────────
-
-function PipelinePicker({ onStart }: { onStart: (source: PerpDexId, target: PerpDexId, amount: string) => void }) {
-  const [source, setSource] = useState<PerpDexId>('hyperliquid');
-  const [target, setTarget] = useState<PerpDexId>('pacifica');
-  const [amount, setAmount] = useState<string>('');
+function PipelinePicker({
+  onStart,
+  initialSource,
+  initialTarget,
+  initialAmount,
+}: {
+  onStart: (source: PerpDexId, target: PerpDexId, amount: string) => void;
+  initialSource?: PerpDexId;
+  initialTarget?: PerpDexId;
+  initialAmount?: string;
+}) {
+  const [source, setSource] = useState<PerpDexId>(initialSource ?? 'hyperliquid');
+  const [target, setTarget] = useState<PerpDexId>(initialTarget ?? 'pacifica');
+  const [amount, setAmount] = useState<string>(initialAmount ?? '');
   const route = useMemo(() => findRoute(source, target), [source, target]);
 
+  const targetCfg = DEPOSIT_TARGETS[target];
   const sameDex = source === target;
-  const amountValid = parseFloat(amount) > 0;
-  const canStart = !sameDex && amountValid && !!route;
+  const targetDisabled = targetCfg.kind === 'disabled';
+  const amountNum = parseFloat(amount);
+  const amountValid = amountNum > 0;
+  const belowMin = amountValid && amountNum < targetCfg.minAmount;
+  const canStart = !sameDex && !targetDisabled && amountValid && !belowMin && !!route;
 
   return (
     <div className="flex flex-col gap-3 p-4">
@@ -64,13 +90,19 @@ function PipelinePicker({ onStart }: { onStart: (source: PerpDexId, target: Perp
           style={{ border: '1px solid #273035' }}
         />
       </label>
-      {route && (
+      {route && !targetDisabled && (
         <div className="text-[10px] rounded px-2 py-1.5" style={{ color: '#8F9BA4', backgroundColor: '#0B141A', border: '1px solid #1F2A33' }}>
-          Route · {route.bridgeKind === 'evm-evm' ? 'EVM → EVM' : 'EVM ↔ Solana'} via Relay
+          Route · {route.bridgeKind === 'evm-evm' ? 'EVM → EVM' : 'EVM ↔ Solana'} via Relay · min {targetCfg.minAmount} USDC
         </div>
       )}
       {sameDex && (
         <div className="text-[10px]" style={{ color: '#FFA94D' }}>Source and target must differ.</div>
+      )}
+      {targetDisabled && (
+        <div className="text-[10px]" style={{ color: '#FFA94D' }}>{targetCfg.disabledReason}</div>
+      )}
+      {belowMin && !targetDisabled && (
+        <div className="text-[10px]" style={{ color: '#FFA94D' }}>Minimum {targetCfg.minAmount} USDC for {PERP_DEX_META[target].name}.</div>
       )}
       <button
         onClick={() => canStart && onStart(source, target, amount)}
@@ -102,8 +134,6 @@ function DexPicker({ label, value, onChange }: { label: string; value: PerpDexId
   );
 }
 
-// ── Run view ───────────────────────────────────────────────────────────
-
 interface RunProps {
   readonly state: PipelineState;
   readonly onAdvance: (leg: 'withdraw' | 'bridge' | 'deposit', hash: string) => void;
@@ -112,7 +142,7 @@ interface RunProps {
   readonly onRetry: () => void;
 }
 
-function PipelineRunView({ state, onAdvance, onFail, onReset, onRetry }: RunProps) {
+export function PipelineRunView({ state, onAdvance, onFail, onReset, onRetry }: RunProps) {
   const route = findRoute(state.source, state.target);
   if (!route) {
     return (
@@ -121,6 +151,7 @@ function PipelineRunView({ state, onAdvance, onFail, onReset, onRetry }: RunProp
       </div>
     );
   }
+  const showDepositStep = !completesOnBridge(state.target);
   return (
     <div className="p-4 flex flex-col gap-3">
       <PipelineHeader state={state} route={route} onReset={onReset} />
@@ -148,18 +179,20 @@ function PipelineRunView({ state, onAdvance, onFail, onReset, onRetry }: RunProp
           <TxLink hash={state.txHashes.bridge} chainId={route.sourceChainId} />
         )}
       </StepRow>
-      <StepRow
-        label={`Deposit to ${PERP_DEX_META[state.target].name}`}
-        active={state.step === 'deposit'}
-        done={!!state.txHashes.deposit}
-      >
-        {state.step === 'deposit' && (
-          <DepositStep state={state} onAdvance={onAdvance} onFail={onFail} />
-        )}
-        {state.txHashes.deposit && (
-          <TxLink hash={state.txHashes.deposit} chainId={route.targetChainId} />
-        )}
-      </StepRow>
+      {showDepositStep && (
+        <StepRow
+          label={`Deposit to ${PERP_DEX_META[state.target].name}`}
+          active={state.step === 'deposit'}
+          done={!!state.txHashes.deposit}
+        >
+          {state.step === 'deposit' && (
+            <PacificaDepositStep state={state} onAdvance={onAdvance} onFail={onFail} />
+          )}
+          {state.txHashes.deposit && (
+            <TxLink hash={state.txHashes.deposit} chainId={route.targetChainId} />
+          )}
+        </StepRow>
+      )}
       {state.step === 'failed' && (
         <div className="rounded px-3 py-2 flex items-center justify-between" style={{ backgroundColor: 'rgba(237,112,136,0.08)', border: '1px solid rgba(237,112,136,0.25)' }}>
           <span className="text-[11px]" style={{ color: '#ED7088' }}>
@@ -222,8 +255,6 @@ function TxLink({ hash, chainId }: { hash: string; chainId: number }) {
   );
 }
 
-// ── Leg steps ──────────────────────────────────────────────────────────
-
 function WithdrawStep({ state, onAdvance, onFail }: { state: PipelineState; onAdvance: RunProps['onAdvance']; onFail: RunProps['onFail'] }) {
   const deps = usePerpDeps();
   const accounts = useStrategyExchangeAccounts();
@@ -274,6 +305,7 @@ function BridgeStep({ state, route, onAdvance, onFail }: { state: PipelineState;
   const [submitting, setSubmitting] = useState(false);
   const needsPhantom = route.bridgeKind === 'evm-svm';
   const pacificaAddress = accounts.pacifica;
+  const targetCfg = DEPOSIT_TARGETS[state.target];
 
   const handleBridge = async () => {
     if (needsPhantom && !pacificaAddress) {
@@ -283,25 +315,24 @@ function BridgeStep({ state, route, onAdvance, onFail }: { state: PipelineState;
     setSubmitting(true);
     try {
       const sourceUsdc = USDC_ADDRESSES[route.sourceChainId];
-      const targetUsdc = USDC_ADDRESSES[route.targetChainId];
+      const targetUsdc = USDC_ADDRESSES[targetCfg.chainId];
       if (!sourceUsdc || !targetUsdc) {
-        throw new Error(`USDC address missing for chain ${route.sourceChainId} or ${route.targetChainId}`);
+        throw new Error(`USDC address missing for chain ${route.sourceChainId} or ${targetCfg.chainId}`);
       }
       const sourceAddr = accounts.byDex[state.source] ?? '';
-      const recipient = route.bridgeKind === 'evm-svm'
-        ? pacificaAddress ?? ''
-        : accounts.byDex[state.target] ?? sourceAddr;
-      if (!sourceAddr || !recipient) {
-        throw new Error('Missing source or recipient address.');
-      }
-      const amountRaw = BigInt(Math.floor(parseFloat(state.amount) * 1_000_000)).toString(); // USDC = 6 decimals
+      if (!sourceAddr) throw new Error('Missing source wallet address.');
+      const recipient = await targetCfg.resolveRecipient({ userEvmAddress: sourceAddr, pacificaAddress });
+      if (!recipient) throw new Error('Failed to resolve target recipient.');
+      // parseUnits avoids float multiplication — USDC input comes in as a string,
+      // so we never materialize the lamport count through a lossy Number path.
+      const amountRaw = parseUnits(state.amount, 6).toString();
       const res = await fetch(`${RELAY_API_URL}/quote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           user: sourceAddr,
           originChainId: route.sourceChainId,
-          destinationChainId: route.targetChainId,
+          destinationChainId: targetCfg.chainId,
           originCurrency: sourceUsdc,
           destinationCurrency: targetUsdc,
           amount: amountRaw,
@@ -355,41 +386,58 @@ function BridgeStep({ state, route, onAdvance, onFail }: { state: PipelineState;
         className="text-[10px] font-semibold px-2 py-1 rounded disabled:opacity-40 self-start"
         style={{ color: '#AB9FF2', border: '1px solid rgba(171,159,242,0.35)' }}
       >
-        {submitting ? 'Bridging…' : `Bridge via Relay (${route.sourceChainId} → ${route.targetChainId})`}
+        {submitting ? 'Bridging…' : `Bridge via Relay (${route.sourceChainId} → ${targetCfg.chainId})`}
       </button>
     </div>
   );
 }
 
-function DepositStep({ state, onAdvance, onFail }: { state: PipelineState; onAdvance: RunProps['onAdvance']; onFail: RunProps['onFail'] }) {
+function PacificaDepositStep({ state, onAdvance, onFail }: { state: PipelineState; onAdvance: RunProps['onAdvance']; onFail: RunProps['onFail'] }) {
   const deps = usePerpDeps();
   const accounts = useStrategyExchangeAccounts();
   const [submitting, setSubmitting] = useState(false);
+  const pacificaAddress = accounts.pacifica;
 
   const handleDeposit = async () => {
+    if (!pacificaAddress) {
+      onFail('Phantom disconnected — reconnect Solana wallet to complete the deposit.');
+      return;
+    }
+    const provider = getPhantomProvider();
+    if (!provider) {
+      onFail('Phantom provider not found. Install or unlock Phantom and try again.');
+      return;
+    }
     setSubmitting(true);
     try {
-      const adapter = getAdapterByDex(state.target);
-      const signFn = deps.getSignFn();
-      const toAddr = accounts.byDex[state.target];
-      if (!toAddr) throw new Error(`No ${state.target} address configured`);
-      const hash = await adapter.deposit(
-        {
-          amount: parseFloat(state.amount),
-          fromAddress: toAddr,
-        },
-        signFn,
-      );
-      deps.showToast({ title: `${state.target} deposit submitted`, type: 'success' });
-      onAdvance('deposit', hash);
+      const userPubkey = new PublicKey(pacificaAddress);
+      const amountLamports = parseUnits(state.amount, 6);
+      const ix = await buildDepositInstruction(userPubkey, amountLamports, 'mainnet');
+      const config = getNetworkConfig('mainnet');
+      const connection = new Connection(config.rpcUrl, 'confirmed');
+      const tx = new Transaction().add(ix);
+      tx.feePayer = userPubkey;
+      tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+      const { signature } = await provider.signAndSendTransaction(tx);
+      await connection.confirmTransaction(signature, 'confirmed');
+      deps.showToast({ title: 'Pacifica deposit submitted', type: 'success' });
+      onAdvance('deposit', signature);
     } catch (err) {
       const m = err instanceof Error ? err.message : String(err);
       onFail(`Deposit failed: ${m}`);
-      deps.showToast({ title: `${state.target} deposit failed`, message: m, type: 'warning' });
+      deps.showToast({ title: 'Pacifica deposit failed', message: m, type: 'warning' });
     } finally {
       setSubmitting(false);
     }
   };
+
+  if (!pacificaAddress) {
+    return (
+      <div className="text-[10px]" style={{ color: '#FFA94D' }}>
+        Phantom disconnected — reconnect Solana wallet to finish the deposit.
+      </div>
+    );
+  }
 
   return (
     <button
@@ -398,16 +446,15 @@ function DepositStep({ state, onAdvance, onFail }: { state: PipelineState; onAdv
       className="text-[10px] font-semibold px-2 py-1 rounded disabled:opacity-40"
       style={{ color: '#AB9FF2', border: '1px solid rgba(171,159,242,0.35)' }}
     >
-      {submitting ? 'Depositing…' : `Deposit to ${state.target}`}
+      {submitting ? 'Depositing…' : `Deposit ${state.amount} USDC to Pacifica`}
     </button>
   );
 }
 
-// ── Done view ──────────────────────────────────────────────────────────
-
-function PipelineDoneView({ state, onReset, onClose }: { state: PipelineState; onReset: () => void; onClose: () => void }) {
+export function PipelineDoneView({ state, onReset, onClose }: { state: PipelineState; onReset: () => void; onClose: () => void }) {
   const elapsed = Math.round((Date.now() - state.startedAt) / 1000);
   const route = findRoute(state.source, state.target);
+  const bridgeTerminal = completesOnBridge(state.target);
   return (
     <div className="p-4 space-y-3">
       <div className="text-xs font-semibold text-white">
@@ -416,6 +463,11 @@ function PipelineDoneView({ state, onReset, onClose }: { state: PipelineState; o
       <div className="text-[10px]" style={{ color: '#6B7580' }}>
         {state.amount} USDC · completed in {elapsed}s
       </div>
+      {bridgeTerminal && (
+        <div className="text-[10px]" style={{ color: '#6B7580' }}>
+          Credit usually arrives in 1–3 minutes on {PERP_DEX_META[state.target].name}.
+        </div>
+      )}
       <div className="rounded-md p-2.5 space-y-1" style={{ backgroundColor: '#0B141A', border: '1px solid #1F2A33' }}>
         {(['withdraw', 'bridge', 'deposit'] as const).map((leg) => {
           const h = state.txHashes[leg];

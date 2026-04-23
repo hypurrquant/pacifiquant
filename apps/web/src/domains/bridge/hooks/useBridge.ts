@@ -10,10 +10,19 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useBalance, useAccount } from 'wagmi';
 import { erc20Abi } from 'viem';
-import { getPublicClient } from '@hq/core/lib/viemClient';
+import { getPublicClient, getPublicClientNoBatch } from '@hq/core/lib/viemClient';
+import { getRpcProvider } from '@hq/core/lib/rpc/provider';
 import { ApiError } from '@hq/core/lib/error';
+// Read the connected wallet from the app's own auth store, not wagmi —
+// Privy-connected addresses (Telegram login, embedded wallets) reach the
+// store via browserSync but may not surface through wagmi's useAccount(),
+// which previously made balance queries return undefined.
+//
+// Use selectEOAAddress (the raw signer EOA) rather than selectActiveAddress
+// (which can be the smart-account or HL agent wallet) — bridge balances
+// live on the user's actual EOA, not on a derived execution address.
+import { useAccountStore, selectEOAAddress } from '@/infra/auth/stores';
 import type { BridgeDirection, BridgeQuote, BridgeStatus, BridgeToken } from '../types';
 import { HL_CHAIN_ID } from '../types';
 
@@ -239,13 +248,28 @@ export function useBridgeTokensWithBalance(chainId: number): {
   isLoading: boolean;
 } {
   const { data: rawTokens, isLoading: tokensLoading } = useBridgeTokens(chainId);
-  const { address } = useAccount();
+  const address = useAccountStore(selectEOAAddress);
 
-  // 네이티브 토큰 잔고
-  const { data: nativeBalance } = useBalance({
-    address,
-    chainId,
-    query: { enabled: !!address },
+  // Native balance — fetched directly through the core public client so it
+  // works for any address the auth store exposes (Privy embedded / social
+  // logins included), rather than wagmi which only sees its own connectors.
+  const { data: nativeBalance } = useQuery({
+    queryKey: ['bridge', 'native-balance', chainId, address],
+    queryFn: async () => {
+      if (!address) return null;
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+          const client = getPublicClient(chainId);
+          const value = await client.getBalance({ address });
+          return { value, decimals: 18 };
+        } catch (err) {
+          try { getRpcProvider().reportFailure(chainId, err as Error); } catch { /* non-rotatable */ }
+        }
+      }
+      return null;
+    },
+    enabled: !!address,
+    staleTime: 30_000,
   });
 
   // ERC-20 잔고들 — 각 토큰별 개별 조회
@@ -260,24 +284,39 @@ export function useBridgeTokensWithBalance(chainId: number): {
     queryKey: ['bridge', 'balances', chainId, address, erc20Tokens.map(t => t.address).join(',')],
     queryFn: async () => {
       if (!address || erc20Tokens.length === 0) return {};
-      let client;
-      try { client = getPublicClient(chainId); } catch { return {}; } // core RPC에 미등록 체인(480 World 등)은 skip
       const balances: Record<string, { raw: string; formatted: string; decimals: number }> = {};
+
+      // One `balanceOf` read with single-RPC-rotation fallback. drpc.org has
+      // returned 500s intermittently on Arbitrum; reportFailure() rotates
+      // the round-robin provider to the backup publicnode endpoint so the
+      // balance isn't silently zero on the first bad RPC attempt.
+      async function readBalanceWithRotation(tokenAddress: `0x${string}`) {
+        let lastErr: unknown = null;
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+          try {
+            const client = getPublicClientNoBatch(chainId);
+            return await client.readContract({
+              address: tokenAddress,
+              abi: erc20Abi,
+              functionName: 'balanceOf',
+              args: [address!],
+            });
+          } catch (err) {
+            lastErr = err;
+            try { getRpcProvider().reportFailure(chainId, err as Error); } catch { /* non-rotatable */ }
+          }
+        }
+        throw lastErr instanceof Error ? lastErr : new Error('balanceOf failed');
+      }
+
       await Promise.all(erc20Tokens.slice(0, 10).map(async (token) => {
         try {
-          const raw = await client.readContract({
-            address: token.address as `0x${string}`, // @ci-exception(type-assertion-count) — BridgeToken.address is string (external API origin)
-            abi: erc20Abi,
-            functionName: 'balanceOf',
-            args: [address as `0x${string}`], // @ci-exception(type-assertion-count) — wagmi address is `0x${string}` | undefined, narrowed above
-          });
-          if (raw > 0n) {
-            const formatted = (Number(raw) / 10 ** token.decimals).toFixed(
-              token.decimals > 6 ? 4 : 2,
-            );
-            balances[token.address.toLowerCase()] = { raw: raw.toString(), formatted, decimals: token.decimals };
-          }
-        } catch { /* skip failed balance */ } // @ci-exception(no-empty-catch) — 개별 토큰 잔고 실패는 무시
+          const raw = await readBalanceWithRotation(token.address as `0x${string}`);
+          const formatted = (Number(raw) / 10 ** token.decimals).toFixed(
+            token.decimals > 6 ? 4 : 2,
+          );
+          balances[token.address.toLowerCase()] = { raw: raw.toString(), formatted, decimals: token.decimals };
+        } catch { /* skip failed balance after rotation */ }
       }));
       return balances;
     },
