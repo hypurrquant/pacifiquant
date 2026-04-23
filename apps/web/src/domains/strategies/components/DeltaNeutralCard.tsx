@@ -220,6 +220,17 @@ export function DeltaNeutralCard() {
   }, [perpMarket, notionalNum]);
 
   const expectedMonthlyFunding = expectedDailyFunding * 30;
+
+  // Round-trip cost: HL spot taker (~0.035%) + Pacifica perp taker + builder
+  // (~0.06%), entry + exit on both legs. Users comparing gross APR to this
+  // card used to miss that the first month's funding barely breaks even on
+  // fees for mid-notional positions.
+  const roundTripFeePct = 2 * (0.035 + 0.06) / 100; // = 0.0019 (0.19%)
+  const roundTripFeeUsd = notionalNum > 0 ? notionalNum * roundTripFeePct : 0;
+  const breakevenDays = (() => {
+    if (!(notionalNum > 0) || expectedDailyFunding <= 0) return null;
+    return roundTripFeeUsd / expectedDailyFunding;
+  })();
   const needsBothAgents = !hlActive || !pacActive;
   const maxExecutableUsd = balanceState.maxExecutableUsd;
 
@@ -446,6 +457,17 @@ export function DeltaNeutralCard() {
               label="Expected Funding / 30d"
               value={`${expectedMonthlyFunding >= 0 ? '+' : ''}${fmtUsd(expectedMonthlyFunding)}`}
               highlight={expectedMonthlyFunding >= 0 ? 'pos' : 'neg'}
+            />
+            <Row
+              label="Round-trip fee (entry+exit)"
+              value={roundTripFeeUsd > 0 ? `-${fmtUsd(roundTripFeeUsd)}` : '—'}
+              highlight={roundTripFeeUsd > 0 ? 'neg' : undefined}
+            />
+            <Row
+              label="Breakeven vs funding"
+              value={breakevenDays !== null
+                ? `${breakevenDays < 365 ? breakevenDays.toFixed(0) : '>365'} days`
+                : (expectedDailyFunding <= 0 ? 'funding unfavorable' : '—')}
             />
           </div>
         </div>

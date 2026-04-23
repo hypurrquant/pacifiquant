@@ -16,6 +16,31 @@ import type { PerpDexId } from '@/domains/perp/types/perp.types';
 /** Anything under this APR counts as "not an edge" for persistence stats. */
 const SUSTAINED_THRESHOLD_APR = 10;
 
+/**
+ * Per-venue taker fees as percentage (0.045 = 0.045%). Numbers reflect each
+ * venue's default public taker tier (doc sources cross-checked 2026-04) and
+ * include the app's own builder/integrator cut where the adapter applies one.
+ * A round-trip arb pays taker on BOTH legs twice (entry + exit), so the
+ * fee_pct below is summed and multiplied by 4 inside `netAprAfterFees`.
+ */
+const DEX_TAKER_FEE_PCT: Record<PerpDexId, number> = {
+  hyperliquid: 0.045 + 0.01, // 0.045% taker + 0.01% builder
+  pacifica: 0.05 + 0.01,     // 0.05% taker + 0.01% builder
+  lighter: 0.03 + 0.01,      // 0.03% taker + 0.01% integrator
+  aster: 0.045,              // 0.045% taker
+};
+
+/** Hold period (days) used to amortize round-trip fees into an APR figure.
+ *  7 days is the middle-of-the-road assumption: short enough to catch the
+ *  "this is too expensive to arb for 1 day" signal, long enough not to
+ *  trivialise fee drag for long-term carry. */
+const NET_APR_HOLD_DAYS = 7;
+
+function netAprAfterFees(grossApr: number, dexA: PerpDexId, dexB: PerpDexId): number {
+  const roundTripFeePct = 2 * (DEX_TAKER_FEE_PCT[dexA] + DEX_TAKER_FEE_PCT[dexB]);
+  return grossApr - (roundTripFeePct * 365) / NET_APR_HOLD_DAYS;
+}
+
 interface PersistenceStats {
   /** Hours the dataset actually covers. */
   readonly observedHours: number;
@@ -34,32 +59,40 @@ interface PersistenceStats {
 /**
  * Bucket each series by hour (UTC floor) and, for every hour where we have
  * data on ≥ 2 DEXs, compute spread = max-min. Returns the sequence of
- * `{ tsHourStart, spreadApr }` plus persistence stats that answer
- * "how long has this spread actually held?".
+ * `{ ts, spreadApr }` plus persistence stats that answer "how long has
+ * this spread actually held?" and the two DEX legs that generated the
+ * median spread (needed for fee-adjusted APR).
  */
 function computeCrossDexSpread(series: readonly DexFundingSeries[]): {
   points: Array<{ ts: number; spreadApr: number }>;
   stats: PersistenceStats | null;
+  /** The two DEXs that produced the max-min spread at the median-ranked
+   *  sample. Used to pick taker-fee levels for net-APR calculation. */
+  legs: { hi: PerpDexId; lo: PerpDexId } | null;
 } {
-  const hourBuckets = new Map<number, number[]>();
+  const hourBuckets = new Map<number, Array<{ dex: PerpDexId; rate: number }>>();
   for (const s of series) {
     if (!s.hasPublicFeed || s.points.length === 0) continue;
     for (const p of s.points) {
       const hourMs = Math.floor(p.ts / 3_600_000) * 3_600_000;
       const arr = hourBuckets.get(hourMs) ?? [];
-      arr.push(p.hourlyRate);
+      arr.push({ dex: s.dex, rate: p.hourlyRate });
       hourBuckets.set(hourMs, arr);
     }
   }
-  const points: Array<{ ts: number; spreadApr: number }> = [];
+  const points: Array<{ ts: number; spreadApr: number; hiDex: PerpDexId; loDex: PerpDexId }> = [];
   for (const [ts, rates] of hourBuckets) {
     if (rates.length < 2) continue;
-    const hi = Math.max(...rates);
-    const lo = Math.min(...rates);
-    points.push({ ts, spreadApr: annualizeRate(hi - lo) });
+    let hi = rates[0];
+    let lo = rates[0];
+    for (const r of rates) {
+      if (r.rate > hi.rate) hi = r;
+      if (r.rate < lo.rate) lo = r;
+    }
+    points.push({ ts, spreadApr: annualizeRate(hi.rate - lo.rate), hiDex: hi.dex, loDex: lo.dex });
   }
   points.sort((a, b) => a.ts - b.ts);
-  if (points.length === 0) return { points, stats: null };
+  if (points.length === 0) return { points: [], stats: null, legs: null };
 
   const sorted = [...points].map(p => p.spreadApr).sort((a, b) => a - b);
   const medianSpreadApr = sorted[Math.floor(sorted.length / 2)];
@@ -78,8 +111,18 @@ function computeCrossDexSpread(series: readonly DexFundingSeries[]): {
     }
   }
   const observedHours = (points[points.length - 1].ts - points[0].ts) / 3_600_000 + 1;
+  // Pick the legs from the point whose spread is closest to the median, so
+  // the net-APR fee calc reflects the typical pairing users would actually
+  // arb — not a one-off spike with an unusual DEX combination.
+  const medianTarget = medianSpreadApr;
+  let medianPoint = points[0];
+  let bestDiff = Math.abs(points[0].spreadApr - medianTarget);
+  for (const p of points) {
+    const diff = Math.abs(p.spreadApr - medianTarget);
+    if (diff < bestDiff) { medianPoint = p; bestDiff = diff; }
+  }
   return {
-    points,
+    points: points.map(p => ({ ts: p.ts, spreadApr: p.spreadApr })),
     stats: {
       observedHours,
       stablePct,
@@ -88,6 +131,7 @@ function computeCrossDexSpread(series: readonly DexFundingSeries[]): {
       maxSpreadApr,
       slotsWithSpread: points.length,
     },
+    legs: { hi: medianPoint.hiDex, lo: medianPoint.loDex },
   };
 }
 
@@ -126,7 +170,10 @@ function computeStats(series: DexFundingSeries): DexStats {
 export function FundingHistoryDrillDown({ symbol, onClose }: Props) {
   const { data, isLoading, error } = useMarketFundingHistory(symbol);
   const series = useMemo<readonly DexFundingSeries[]>(() => data ?? [], [data]);
-  const { stats: persistenceStats } = useMemo(() => computeCrossDexSpread(series), [series]);
+  const { points: spreadPoints, stats: persistenceStats, legs: medianLegs } = useMemo(
+    () => computeCrossDexSpread(series),
+    [series],
+  );
 
   const { tsMin, tsMax, rateMin, rateMax } = useMemo(() => {
     let tsMin = Infinity;
@@ -193,7 +240,7 @@ export function FundingHistoryDrillDown({ symbol, onClose }: Props) {
         <>
           {/* Persistence headline — directly answers "has this spread held?" */}
           {persistenceStats && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-3">
               <PersistenceStat
                 label="Sustained"
                 value={`${persistenceStats.maxRunHours.toFixed(1)}h`}
@@ -207,10 +254,25 @@ export function FundingHistoryDrillDown({ symbol, onClose }: Props) {
                 good={persistenceStats.stablePct >= 50}
               />
               <PersistenceStat
-                label="Median spread"
+                label="Median"
                 value={`${persistenceStats.medianSpreadApr >= 0 ? '+' : ''}${persistenceStats.medianSpreadApr.toFixed(1)}%`}
-                sub={`APR · typical level`}
+                sub={`APR gross · typical`}
                 good={persistenceStats.medianSpreadApr >= SUSTAINED_THRESHOLD_APR}
+              />
+              <PersistenceStat
+                label={`Net (${NET_APR_HOLD_DAYS}d hold)`}
+                value={medianLegs
+                  ? (() => {
+                      const net = netAprAfterFees(persistenceStats.medianSpreadApr, medianLegs.hi, medianLegs.lo);
+                      return `${net >= 0 ? '+' : ''}${net.toFixed(1)}%`;
+                    })()
+                  : '—'}
+                sub={medianLegs
+                  ? `after taker+builder on both legs`
+                  : 'needs two DEXs with data'}
+                good={medianLegs
+                  ? netAprAfterFees(persistenceStats.medianSpreadApr, medianLegs.hi, medianLegs.lo) >= SUSTAINED_THRESHOLD_APR
+                  : false}
               />
               <PersistenceStat
                 label="Peak"
@@ -219,6 +281,12 @@ export function FundingHistoryDrillDown({ symbol, onClose }: Props) {
                 good={false}
               />
             </div>
+          )}
+
+          {/* Cross-DEX spread timeline — bars colored green above threshold
+              so a user can see at-a-glance if the edge has been continuous. */}
+          {spreadPoints.length > 0 && (
+            <SpreadOverlay points={spreadPoints} thresholdApr={SUSTAINED_THRESHOLD_APR} />
           )}
 
           {/* Chart */}
@@ -275,6 +343,70 @@ export function FundingHistoryDrillDown({ symbol, onClose }: Props) {
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+function SpreadOverlay({
+  points,
+  thresholdApr,
+}: {
+  points: Array<{ ts: number; spreadApr: number }>;
+  thresholdApr: number;
+}) {
+  const width = 720;
+  const height = 54;
+  const padLeft = 40;
+  const padRight = 16;
+  const padTop = 6;
+  const padBottom = 14;
+  const plotW = width - padLeft - padRight;
+  const plotH = height - padTop - padBottom;
+
+  const tsMin = points[0].ts;
+  const tsMax = points[points.length - 1].ts + 3_600_000; // include the last hour's width
+  const maxSpread = Math.max(thresholdApr * 1.2, ...points.map(p => p.spreadApr));
+  const x = (ts: number) => padLeft + ((ts - tsMin) / Math.max(1, tsMax - tsMin)) * plotW;
+  const y = (apr: number) => padTop + (1 - apr / maxSpread) * plotH;
+  const barW = Math.max(2, plotW / points.length - 1);
+
+  return (
+    <div className="mb-3">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-[10px] uppercase tracking-wider" style={{ color: '#6B7580' }}>
+          Cross-DEX spread · hourly
+        </span>
+        <span className="text-[10px]" style={{ color: '#6B7580' }}>
+          green = ≥{thresholdApr}% APR
+        </span>
+      </div>
+      <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="w-full h-[54px]">
+        <line
+          x1={padLeft}
+          x2={padLeft + plotW}
+          y1={y(thresholdApr)}
+          y2={y(thresholdApr)}
+          stroke="#273035"
+          strokeDasharray="3 3"
+        />
+        <text x={padLeft - 4} y={y(thresholdApr) + 3} textAnchor="end" fontSize="8" fill="#6B7580">
+          {thresholdApr}%
+        </text>
+        {points.map((p) => {
+          const good = p.spreadApr >= thresholdApr;
+          return (
+            <rect
+              key={p.ts}
+              x={x(p.ts)}
+              y={y(p.spreadApr)}
+              width={barW}
+              height={Math.max(1, plotH - (y(p.spreadApr) - padTop))}
+              fill={good ? '#6EE7B7' : '#3a4852'}
+              opacity={good ? 0.8 : 0.5}
+            />
+          );
+        })}
+      </svg>
     </div>
   );
 }

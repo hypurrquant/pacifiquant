@@ -14,6 +14,7 @@ import { getAdapterByDex } from '@/domains/perp/hooks/usePerpAdapter';
 import { PERP_DEX_LIST, PERP_DEX_ORDER } from '@/shared/config/perp-dex-display';
 import { useStrategyExchangeAccounts } from '../hooks/useStrategyExchangeAccounts';
 import { getHyperliquidUsdcSummary } from '../utils/hyperliquidUsdcSummary';
+import { Funding24hRow } from './Funding24hRow';
 
 const EXCHANGES = PERP_DEX_LIST;
 
@@ -504,6 +505,12 @@ export function PortfolioOverview({ walletAddress }: { walletAddress: string | n
       )}
 
       {loading && <div className="text-center text-[10px] mt-2" style={{ color: '#949E9C' }}>Loading balances...</div>}
+
+      {walletAddress && (
+        <div className="mt-3">
+          <Funding24hRow accounts={accounts.byDex} />
+        </div>
+      )}
 
       {/* Open Positions — 2x2 grid, one cell per DEX, with HL non-USDC spot
           balances inline so delta-neutral (spot long + perp short) is visible
