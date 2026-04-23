@@ -8,6 +8,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { ContextRequiredError } from '@hq/core/lib/error';
 import { useBridgeQuote, useBridgeExecution, useBridgeTokensWithBalance } from '../hooks/useBridge';
+import { PipelineTab } from './PipelineTab';
 import type { TokenWithBalance } from '../hooks/useBridge';
 import { SUPPORTED_EXTERNAL_CHAINS, HL_CHAIN_ID, HL_USDC_ADDRESS } from '../types';
 import type { BridgeDirection, BridgeToken } from '../types';
@@ -97,14 +98,16 @@ export function BridgeCard({ walletAddress, onClose, onComplete, onSendTransacti
   }, []);
 
   const directionLabel = direction === 'deposit' ? 'Deposit' : 'Withdraw';
+  const [showPipeline, setShowPipeline] = useState(false);
 
   return (
     <div className="bg-[#0F1A1F] border border-[#273035] rounded-lg p-3 mx-auto w-full relative">
       {/* Header: Tabs + Settings + Close */}
       <div className="flex items-center justify-between mb-2.5">
         <div className="flex bg-[#1B2429] rounded p-0.5">
-          <TabButton active={direction === 'deposit'} label="Deposit" onClick={() => { setDirection('deposit'); setAmount(''); }} />
-          <TabButton active={direction === 'withdraw'} label="Withdraw" onClick={() => { setDirection('withdraw'); setAmount(''); }} />
+          <TabButton active={!showPipeline && direction === 'deposit'} label="Deposit" onClick={() => { setShowPipeline(false); setDirection('deposit'); setAmount(''); }} />
+          <TabButton active={!showPipeline && direction === 'withdraw'} label="Withdraw" onClick={() => { setShowPipeline(false); setDirection('withdraw'); setAmount(''); }} />
+          <TabButton active={showPipeline} label="Pipeline" onClick={() => setShowPipeline(true)} />
         </div>
         <div className="flex items-center gap-1">
           <SettingsButton
@@ -123,6 +126,9 @@ export function BridgeCard({ walletAddress, onClose, onComplete, onSendTransacti
         </div>
       </div>
 
+      {showPipeline ? (
+        <PipelineTab onClose={onClose} />
+      ) : (<>
       {/* From Card */}
       <div className="bg-[#1B2429] rounded-lg p-2.5 mb-1">
         <div className="flex items-center justify-between mb-1">
@@ -264,6 +270,7 @@ export function BridgeCard({ walletAddress, onClose, onComplete, onSendTransacti
           onClose={() => setShowChainSelect(false)}
         />
       )}
+      </>)}
     </div>
   );
 }
