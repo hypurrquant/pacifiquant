@@ -236,7 +236,7 @@ function PrivySyncBridge({ children }: PropsWithChildren) {
  * - PrivySyncBridge로 상태 동기화
  */
 export default function PrivyClientProvider({ children }: PropsWithChildren) {
-    const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? null;
+    const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? 'cmm8vjkbf017v0cjojumw07wk';
 
     if (!appId) {
         return <>{children}</>;

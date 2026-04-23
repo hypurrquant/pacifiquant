@@ -22,7 +22,6 @@
     "paths": {
       "@hq/core/*": ["../../packages/core/*"],
       "@hq/react/*": ["../../packages/react/*"],
-      "@hq/wasm-crypto": ["../../packages/wasm-crypto/pkg/wasm_crypto"],
       "@/*": ["src/*"],
       "@/domains/*": ["src/domains/*"],
       "@/shared/*": ["src/shared/*"]
